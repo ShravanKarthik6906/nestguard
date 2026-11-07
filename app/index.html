@@ -33,8 +33,16 @@
       <div id="banner" class="banner none">Pick a spot</div>
       <div id="result" hidden>
         <p class="message"><strong id="message"></strong> <span class="score">Risk <b id="score"></b>/100</span></p>
+        <p class="best">Best time to fly: <b id="best-time">—</b></p>
+        <div id="checks" class="checks"></div>
+        <p id="raptor" class="raptor" hidden></p>
+        <p id="why" class="why" hidden></p>
         <ul id="reasons"></ul>
       </div>
+    </section>
+
+    <section id="device" class="card panel device offline">
+      <strong>Device</strong> <span id="device-readings">Device offline</span>
     </section>
 
     <script type="module" src="/src/main.js"></script>

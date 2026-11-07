@@ -4,13 +4,14 @@ import mockGreen from '../mock/check-green.json'
 import mockYellow from '../mock/check-yellow.json'
 import mockRed from '../mock/check-red.json'
 import mockBolsa from '../mock/check-bolsa.json'
+import mockTelemetry from '../mock/telemetry.json'
 
 // Every call returns { data, source } where source is 'live', 'cached' or 'mock'.
 
-async function getJSON(path) {
+async function getJSON(path, timeoutMs = TIMEOUT_MS) {
   const key = 'ng:' + path
   try {
-    const res = await fetch(path, { signal: AbortSignal.timeout(TIMEOUT_MS) })
+    const res = await fetch(path, { signal: AbortSignal.timeout(timeoutMs) })
     if (!res.ok) throw new Error('HTTP ' + res.status)
     const data = await res.json()
     try { localStorage.setItem(key, JSON.stringify(data)) } catch {}
@@ -70,4 +71,18 @@ export async function setDemo(body) {
     signal: AbortSignal.timeout(TIMEOUT_MS),
   })
   if (!res.ok) throw new Error('HTTP ' + res.status)
+}
+
+// Gemini's one-sentence "why". Separate, slower call so the banner never waits for it.
+export async function explain(lat, lon, date) {
+  if (USE_MOCK) return { data: { why: null }, source: 'mock' }
+  return getJSON(`/check?lat=${r4(lat)}&lon=${r4(lon)}&date=${date}&explain=true`, 20000)
+}
+
+// Latest device readings. Never cached: an old reading must not look live.
+export async function getTelemetry() {
+  if (USE_MOCK) return { ...mockTelemetry, ts: new Date().toISOString().slice(0, 19) }
+  const res = await fetch('/device/telemetry', { cache: 'no-store', signal: AbortSignal.timeout(TIMEOUT_MS) })
+  if (!res.ok) throw new Error('HTTP ' + res.status)
+  return res.json()
 }

@@ -59,3 +59,18 @@ button:active { transform: scale(0.97); }
 
 button.demo { background: #2b7bd0; color: #fff; }
 button.stop { background: #d93025; color: #fff; }
+
+.best { margin: 0 0 10px; }
+.checks { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.check { padding: 4px 12px; border-radius: 99px; font-size: 0.9rem; font-weight: 600; color: #fff; background: #9fb3c6; }
+.check::before { content: '● '; }
+.check.green { background: #2e9d4f; }
+.check.yellow { background: #e6a700; }
+.check.red { background: #d93025; }
+.raptor { background: #fff4e5; border-left: 4px solid #e67700; padding: 8px 12px; border-radius: 8px; margin: 0 0 10px; }
+.why { background: #eef5fb; padding: 8px 12px; border-radius: 8px; margin: 0 0 10px; font-style: italic; }
+.why.loading { color: #7b93a8; }
+.device { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.device::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: #2e9d4f; }
+.device.offline::before { background: #b8c5d1; }
+.device.offline #device-readings { color: #7b93a8; }
