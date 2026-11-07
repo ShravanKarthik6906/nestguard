@@ -223,3 +223,6 @@ venv/
 .env
 __pycache__/
 .cache/
+backend/audio_cache/
+app/node_modules/
+app/dist/

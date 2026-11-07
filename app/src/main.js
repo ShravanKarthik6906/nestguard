@@ -4,6 +4,7 @@ import { getZones, check } from './api.js'
 import { createMap, drawZones, setPin } from './map.js'
 import { showLoading, showCheck, showCheckError } from './check.js'
 import { startDemo, stopDemo, DEMO_DATE } from './demo.js'
+import { announce } from './speech.js'
 
 const $ = (id) => document.getElementById(id)
 
@@ -49,6 +50,7 @@ async function runCheck() {
     const { data, source } = await check(spot.lat, spot.lon, $('date').value)
     if (id !== checkId) return
     showCheck(data)
+    announce(data)
     if (source !== 'live') setStatus('check · ' + source, source)
   } catch (err) {
     if (id === checkId) showCheckError('API unreachable: ' + err.message)
