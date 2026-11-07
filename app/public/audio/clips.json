@@ -1,1 +1,10 @@
-{}
+{
+  "Go. Clear to fly.": "go-clear-to-fly.mp3",
+  "Wait. Check the warnings before you fly.": "wait-check-the-warnings-before-you-fly.mp3",
+  "Don't fly.": "don-t-fly.mp3",
+  "Don't fly. Inside a nesting zone, don't fly here": "don-t-fly-inside-a-nesting-zone-don-t-fly-here.mp3",
+  "Don't fly. Nesting zone close by, stay 170 m away or climb to 300 ft": "don-t-fly-nesting-zone-close-by-stay-170-m-away-or-climb-to-.mp3",
+  "Don't fly: below FAA weather minimums": "don-t-fly-below-faa-weather-minimums.mp3",
+  "Go. Clear to fly": "go-clear-to-fly.mp3",
+  "Wait. Birds nearby, keep at least 70 m away": "wait-birds-nearby-keep-at-least-70-m-away.mp3"
+}
