@@ -222,3 +222,4 @@ __marimo__/
 venv/
 .env
 __pycache__/
+.cache/
