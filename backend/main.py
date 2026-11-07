@@ -19,6 +19,8 @@ import pathlib
 from fastapi import Body, FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 
+import scoring
+
 app = FastAPI(title="NestGuard API")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
@@ -69,7 +71,8 @@ PUBLIC_FIELDS = {"_id": 0, "lat": 1, "lon": 1, "radius_m": 1, "level": 1,
 def get_zones(lat, lon, radius_km):
     if ZONES is not None:
         try:
-            query = {"loc": {"$nearSphere": {
+            query = {"sightings": {"$exists": True},      # skip stray test docs
+                     "loc": {"$nearSphere": {
                 "$geometry": {"type": "Point", "coordinates": [lon, lat]},   # [lon, lat]!
                 "$maxDistance": radius_km * 1000}}}
             return list(ZONES.find(query, PUBLIC_FIELDS).limit(200))
@@ -78,9 +81,7 @@ def get_zones(lat, lon, radius_km):
     return [z for z in MOCK_ZONES if dist_m(lat, lon, z["lat"], z["lon"]) <= radius_km * 1000]
 
 
-def score_spot(lat, lon, date):
-    # U4-U6: replace with the real score (sightings, season, weather, safety, legal).
-    zones = get_zones(lat, lon, 5)
+def mock_score(lat, lon, zones):
     d = lambda z: dist_m(lat, lon, z["lat"], z["lon"])
     inside = [z for z in zones if d(z) <= z["radius_m"]]
     near = [z for z in zones if d(z) <= z["radius_m"] + 300]
@@ -93,13 +94,30 @@ def score_spot(lat, lon, date):
     else:
         out = {"level": "green", "score": 12, "message": "Clear to fly", "reasons": []}
     out["zones"] = zones
+    return out
+
+
+def is_real(zones):
+    return bool(zones) and "sightings" in zones[0]
+
+
+def score_spot(lat, lon, date):
+    zones = get_zones(lat, lon, 5)
+    if is_real(zones):
+        out = scoring.score(lat, lon, date, zones)          # U5: pass weather_mult here
+    else:
+        out = mock_score(lat, lon, zones)
     out["best_time"] = None            # U9: e.g. "Tomorrow 10 AM to 1 PM"
     return out
 
 
 @app.get("/zones")
-def zones(lat: float, lon: float, radius_km: float = 5):
-    return get_zones(lat, lon, radius_km)
+def zones(lat: float, lon: float, radius_km: float = 5,
+          date: datetime.date = Query(default_factory=datetime.date.today)):
+    found = get_zones(lat, lon, radius_km)
+    if is_real(found):
+        return [scoring.public_zone(z, date) for z in found]   # level for that date, no species
+    return found
 
 
 @app.get("/check")
