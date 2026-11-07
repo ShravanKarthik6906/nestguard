@@ -3,7 +3,7 @@ import 'leaflet/dist/leaflet.css'
 
 export const COLORS = { green: '#2e9d4f', yellow: '#e6a700', red: '#d93025' }
 
-let map, zoneLayer
+let map, zoneLayer, pin
 
 export function createMap(el, center) {
   map = L.map(el).setView([center.lat, center.lon], 14)
@@ -26,4 +26,10 @@ export function drawZones(zones) {
       interactive: false,
     }).addTo(zoneLayer)
   }
+}
+
+// The pilot's chosen spot (never a bird location).
+export function setPin(lat, lon) {
+  if (!pin) pin = L.circleMarker([lat, lon], { radius: 9, color: '#17324d', weight: 3, fillColor: '#fff', fillOpacity: 1 }).addTo(map)
+  else pin.setLatLng([lat, lon])
 }

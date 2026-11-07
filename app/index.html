@@ -11,7 +11,27 @@
       <label>Date <input type="date" id="date" /></label>
       <span id="status" class="status"></span>
     </header>
+
     <div id="map" class="card"></div>
+
+    <section class="card panel">
+      <div class="row presets">
+        <button data-preset="rpi-today">RPI today</button>
+        <button data-preset="rpi-may">RPI in nesting season</button>
+        <button data-preset="bolsa">Bolsa Chica 2021</button>
+      </div>
+      <div class="row">
+        <span id="where" class="where">Tap the map to pick a spot</span>
+        <button id="locate">Use my location</button>
+      </div>
+
+      <div id="banner" class="banner none">Pick a spot</div>
+      <div id="result" hidden>
+        <p class="message"><strong id="message"></strong> <span class="score">Risk <b id="score"></b>/100</span></p>
+        <ul id="reasons"></ul>
+      </div>
+    </section>
+
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

@@ -32,3 +32,27 @@ input, button { font: inherit; }
 .status.mock { background: #e3e0ff; }
 .status.error { background: #fde0dd; }
 #map { height: 55vh; min-height: 300px; overflow: hidden; }
+
+.panel { padding: 14px 16px; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
+button {
+  border: 0; border-radius: 99px; padding: 10px 16px; cursor: pointer;
+  background: #e6f2fc; color: var(--ink); font-weight: 600;
+}
+button:active { transform: scale(0.97); }
+.presets button { background: var(--ink); color: #fff; }
+.where { font-variant-numeric: tabular-nums; color: #4a6680; }
+
+.banner {
+  border-radius: 16px; padding: 22px 12px; margin: 6px 0 10px;
+  text-align: center; font-size: clamp(2.2rem, 10vw, 3.4rem); font-weight: 800;
+  color: #fff; transition: opacity 0.2s;
+}
+.banner.green { background: #2e9d4f; }
+.banner.yellow { background: #e6a700; }
+.banner.red { background: #d93025; }
+.banner.none { background: #dfe9f2; color: #6b8299; font-size: 1.4rem; }
+.banner.loading { opacity: 0.55; }
+.message { font-size: 1.15rem; margin: 0 0 6px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; }
+.score { font-size: 0.95rem; color: #4a6680; }
+#reasons { margin: 0; padding-left: 20px; line-height: 1.5; }

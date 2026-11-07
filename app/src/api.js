@@ -1,5 +1,9 @@
 import { USE_MOCK, TIMEOUT_MS } from './config.js'
 import mockZones from '../mock/zones.json'
+import mockGreen from '../mock/check-green.json'
+import mockYellow from '../mock/check-yellow.json'
+import mockRed from '../mock/check-red.json'
+import mockBolsa from '../mock/check-bolsa.json'
 
 // Every call returns { data, source } where source is 'live', 'cached' or 'mock'.
 
@@ -39,4 +43,19 @@ function mockGetZones(lat, lon, radiusKm, date) {
 export async function getZones(lat, lon, radiusKm, date) {
   if (USE_MOCK) return { data: mockGetZones(lat, lon, radiusKm, date), source: 'mock' }
   return getJSON(`/zones?lat=${r4(lat)}&lon=${r4(lon)}&radius_km=${Math.round(radiusKm)}&date=${date}`)
+}
+
+// Mock /check: same "inside a zone" rule as main.py's mock score.
+function mockCheck(lat, lon, date) {
+  const zones = mockGetZones(lat, lon, 5, date)
+  const d = (z) => distM(lat, lon, z.lat, z.lon)
+  let r = mockGreen
+  if (zones.some((z) => z.level === 'red' && d(z) <= z.radius_m)) r = lat < 35 ? mockBolsa : mockRed
+  else if (zones.some((z) => d(z) <= z.radius_m + 300)) r = mockYellow
+  return { ...r, zones }
+}
+
+export async function check(lat, lon, date) {
+  if (USE_MOCK) return { data: mockCheck(lat, lon, date), source: 'mock' }
+  return getJSON(`/check?lat=${r4(lat)}&lon=${r4(lon)}&date=${date}`)
 }
