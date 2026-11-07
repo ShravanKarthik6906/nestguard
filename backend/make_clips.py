@@ -41,8 +41,14 @@ def from_api(api):
     out = set()
     for lat, lon, date in PRESETS + WALK:
         q = {"lat": lat, "lon": lon} | ({"date": date} if date else {})
-        with urllib.request.urlopen(f"{api.rstrip('/')}/check?{urllib.parse.urlencode(q)}", timeout=30) as r:
-            d = json.load(r)
+        print(f"checking {lat}, {lon} {date or 'today'} ...", end=" ", flush=True)
+        try:
+            with urllib.request.urlopen(f"{api.rstrip('/')}/check?{urllib.parse.urlencode(q)}", timeout=30) as r:
+                d = json.load(r)
+        except Exception as e:
+            print("failed:", e)
+            continue
+        print(d["level"])
         out.add(spoken(d["level"], d["message"]))
     return sorted(out)
 
@@ -61,6 +67,9 @@ def main():
     manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
     for t in texts:
         name = slug(t)
+        if (OUT / name).exists() and manifest.get(t) == name and "--final" not in sys.argv:
+            print("already have", name)
+            continue
         print(f"{model}: {t!r} -> {name}")
         (OUT / name).write_bytes(fish_tts(t, model=model))
         manifest[t] = name
