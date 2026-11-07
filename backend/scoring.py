@@ -152,8 +152,12 @@ def score(lat, lon, date, zones, weather_mult=1.0, weather_reasons=()):
 
     raptor_alert = None
     if raptor_n:
-        raptor_alert = ("Hawks or eagles seen within 1 km. They can attack drones, "
-                        "especially near their nests. Watch the sky and land if one comes close.")
+        if "raptor" in nesting_now:
+            raptor_alert = ("Hawks or eagles seen within 1 km during their nesting season. They defend "
+                            "nests and may attack drones. Watch the sky and land if one comes close.")
+        else:
+            raptor_alert = ("Hawks or eagles seen within 1 km. They sometimes chase drones, "
+                            "so keep an eye on the sky and land if one comes close.")
 
     return {"level": level, "score": s, "message": message, "reasons": reasons,
             "raptor_alert": raptor_alert,

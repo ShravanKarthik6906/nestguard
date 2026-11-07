@@ -25,8 +25,7 @@ import weather
 
 app = FastAPI(title="NestGuard API")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
-from speak import router as speak_router
-app.include_router(speak_router)
+
 try:                                   # load backend/.env (MONGODB_URI, keys)
     from dotenv import load_dotenv
     load_dotenv(pathlib.Path(__file__).parent / ".env")
@@ -114,12 +113,13 @@ def hour_label(when, today):
 
 
 def best_time(lat, lon, date, base_risk, nesting_until):
-    """U9: scan the next 12 daylight hours (today) or that day's daylight hours (other dates)."""
+    """U9: today -> scan from now to the end of tomorrow and report the first daylight window
+    with the best level; other dates -> that day's daylight hours."""
     local_today = weather.local_now(lat, lon)
     if date == local_today.date():
         start = local_today.replace(minute=0, second=0, microsecond=0)
         hs = weather.hours(lat, lon, date) + weather.hours(lat, lon, date + datetime.timedelta(days=1))
-        hs = [h for h in hs if start <= h[0] < start + datetime.timedelta(hours=12)]
+        hs = [h for h in hs if h[0] >= start]
     else:
         hs = weather.hours(lat, lon, date)
     hs = [h for h in hs if h[2]]                       # daylight only
@@ -139,14 +139,18 @@ def best_time(lat, lon, date, base_risk, nesting_until):
         elif run:
             break
     day, a = hour_label(run[0], local_today.date())
-    _, b = hour_label(run[-1] + datetime.timedelta(hours=1), local_today.date())
+    end = run[-1] + datetime.timedelta(hours=1)
+    daylight = {when for when, _ in rated}
+    b = hour_label(end, local_today.date())[1] if end in daylight else "sunset"
     window = f"{day} {a} to {b}"
+    if run[0] <= local_today < end:
+        window = f"Now until {b}"
     if best == 0:
         return window
     if best == 2:
         if nesting_until and scoring.level_for(round(base_risk * 100)) == "red":
             return f"No safe window: nesting season here until the end of {nesting_until}"
-        return "No safe window in the next 12 hours"
+        return "No safe window today or tomorrow"
     return f"No clear window; least risky {window}"
 
 
