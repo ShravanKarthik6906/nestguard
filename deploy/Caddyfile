@@ -1,0 +1,19 @@
+# NestGuard on one Vultr server.
+# Caddy gets the https certificate automatically for every name listed below.
+# setup.sh replaces SITE_NAMES, e.g. "nestguard.xyz, 45-76-1-2.sslip.io".
+SITE_NAMES {
+	encode gzip
+
+	# API paths -> FastAPI (uvicorn on this server only, never exposed directly)
+	@api path /zones* /check* /device/* /speak* /docs* /openapi.json
+	handle @api {
+		reverse_proxy 127.0.0.1:8000
+	}
+
+	# Everything else -> the built app
+	handle {
+		root * /srv/nestguard/app/dist
+		try_files {path} /index.html
+		file_server
+	}
+}

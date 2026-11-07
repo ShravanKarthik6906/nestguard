@@ -1,0 +1,14 @@
+[Unit]
+Description=NestGuard API (FastAPI)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=nestguard
+WorkingDirectory=/srv/nestguard/backend
+ExecStart=/srv/nestguard/backend/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
