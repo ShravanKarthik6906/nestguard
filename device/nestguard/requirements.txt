@@ -1,0 +1,4 @@
+RPLCD
+smbus2
+pyserial
+pynmea2
