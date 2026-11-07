@@ -1,3 +1,19 @@
-{"level": "red", "score": 75, "message": "Nesting zone close by, stay 170 m away or climb to 300 ft",
- "reasons": ["Hawk or eagle sightings within 1 km", "Colony nesters nearby (terns, gulls, herons)", "Nesting season for colony, large, medium, raptor, small birds", "79 recent sightings within 1 km"],
- "zones": [], "best_time": null}
+{
+ "level": "red",
+ "score": 75,
+ "message": "Nesting zone close by, stay 170 m away or climb to 300 ft",
+ "reasons": [
+  "Hawk or eagle sightings within 1 km",
+  "Colony nesters nearby (terns, gulls, herons)",
+  "Nesting season for colony, large, medium, raptor, small birds",
+  "79 recent sightings within 1 km"
+ ],
+ "zones": [],
+ "best_time": "No safe window: nesting season here until the end of August",
+ "raptor_alert": "Hawks or eagles seen within 1 km. They can attack drones, especially near their nests. Watch the sky and land if one comes close.",
+ "checks": {
+  "wildlife": "red",
+  "safety": "green",
+  "legal": "green"
+ }
+}

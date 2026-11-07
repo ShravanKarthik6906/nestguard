@@ -1,10 +1,11 @@
 import './style.css'
 import { RPI, USE_MOCK } from './config.js'
-import { getZones, check } from './api.js'
+import { getZones, check, explain } from './api.js'
 import { createMap, drawZones, setPin } from './map.js'
-import { showLoading, showCheck, showCheckError } from './check.js'
+import { showLoading, showCheck, showCheckError, showWhy } from './check.js'
 import { startDemo, stopDemo, DEMO_DATE } from './demo.js'
 import { announce } from './speech.js'
+import { startTelemetry } from './telemetry.js'
 
 const $ = (id) => document.getElementById(id)
 
@@ -52,8 +53,20 @@ async function runCheck({ speak = true } = {}) {
     showCheck(data)
     announce(data, { force: speak })
     if (source !== 'live') setStatus('check · ' + source, source)
+    if (speak) loadWhy(id) // someone tapped: ask Gemini why (skipped during the walk)
+    else showWhy(null)
   } catch (err) {
     if (id === checkId) showCheckError('API unreachable: ' + err.message)
+  }
+}
+
+async function loadWhy(id) {
+  showWhy(undefined)
+  try {
+    const { data } = await explain(spot.lat, spot.lon, $('date').value)
+    if (id === checkId) showWhy(data.why || null)
+  } catch {
+    if (id === checkId) showWhy(null)
   }
 }
 
@@ -126,4 +139,5 @@ async function stopWalk() {
 $('demo-stop').addEventListener('click', stopWalk)
 
 loadZones()
+startTelemetry()
 if (USE_MOCK) document.title = 'NestGuard (mock)'
