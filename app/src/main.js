@@ -3,6 +3,7 @@ import { RPI, USE_MOCK } from './config.js'
 import { getZones, check } from './api.js'
 import { createMap, drawZones, setPin } from './map.js'
 import { showLoading, showCheck, showCheckError } from './check.js'
+import { startDemo, stopDemo, DEMO_DATE } from './demo.js'
 
 const $ = (id) => document.getElementById(id)
 
@@ -86,11 +87,41 @@ const PRESETS = {
 document.querySelectorAll('[data-preset]').forEach((btn) => {
   btn.addEventListener('click', () => {
     const p = PRESETS[btn.dataset.preset]
+    if (!$('demo-stop').hidden) stopWalk()
     $('date').value = p.date()
     pickSpot(p.lat, p.lon, { pan: true })
     loadZonesSoon() // date changed even if the map didn't move
   })
 })
+
+// ---- demo walk (indoors, no GPS): the app moves, the device follows via /device/demo
+$('demo-start').addEventListener('click', () => {
+  $('date').value = DEMO_DATE
+  $('demo-start').hidden = true
+  $('demo-stop').hidden = false
+  map.setView([33.715, -118.025], 14)
+  startDemo(
+    (p, i, n) => {
+      $('demo-info').textContent = `Point ${i + 1}/${n}`
+      pickSpot(p.lat, p.lon)
+    },
+    (msg) => setStatus(msg, 'error'),
+  )
+})
+
+async function stopWalk() {
+  $('demo-stop').hidden = true
+  $('demo-start').hidden = false
+  $('demo-info').textContent = ''
+  try {
+    await stopDemo()
+    setStatus('Demo stopped', '')
+  } catch (err) {
+    setStatus('Stop not sent: ' + err.message + ' (tap Stop again)', 'error')
+    $('demo-stop').hidden = false
+  }
+}
+$('demo-stop').addEventListener('click', stopWalk)
 
 loadZones()
 if (USE_MOCK) document.title = 'NestGuard (mock)'

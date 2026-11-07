@@ -59,3 +59,15 @@ export async function check(lat, lon, date) {
   if (USE_MOCK) return { data: mockCheck(lat, lon, date), source: 'mock' }
   return getJSON(`/check?lat=${r4(lat)}&lon=${r4(lon)}&date=${date}`)
 }
+
+// Tell the device where to "be". {} stops demo mode. Not cached; skipped in mock mode.
+export async function setDemo(body) {
+  if (USE_MOCK) return
+  const res = await fetch('/device/demo', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  })
+  if (!res.ok) throw new Error('HTTP ' + res.status)
+}
