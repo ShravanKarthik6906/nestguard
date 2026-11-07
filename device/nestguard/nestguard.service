@@ -10,6 +10,12 @@ WorkingDirectory=/home/nest/nestguard
 Environment=NESTGUARD_API=http://192.168.1.50:8000
 Environment=NESTGUARD_CHECK_PATH=/check
 Environment=NESTGUARD_LCD_ADDR=0x27
+# Pins: physical 11/13 by default. If the LEDs are in Grove HAT sockets, set the socket number:
+#Environment=NESTGUARD_RED_PIN=5
+#Environment=NESTGUARD_GREEN_PIN=16
+# Grove HAT analog sockets: temp in A0 -> 0, light in A2 -> 2 (the defaults)
+Environment=NESTGUARD_TEMP_CH=0
+Environment=NESTGUARD_LIGHT_CH=2
 ExecStart=/home/nest/nestguard/venv/bin/python /home/nest/nestguard/nestguard.py
 Restart=always
 RestartSec=3
