@@ -31,7 +31,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 # ---------------------------------------------------------------- settings
 # Override any of these with environment variables (see nestguard.service).
-API = os.environ.get("NESTGUARD_API", "http://192.168.1.50:8000").rstrip("/")
+API = os.environ.get("NESTGUARD_API", "https://149-28-239-148.sslip.io").rstrip("/")
 CHECK_PATH = os.environ.get("NESTGUARD_CHECK_PATH", "/check")      # match the README
 DEMO_PATH = os.environ.get("NESTGUARD_DEMO_PATH", "/device/demo")
 TELEMETRY_PATH = os.environ.get("NESTGUARD_TELEMETRY_PATH", "/device/telemetry")
@@ -49,10 +49,30 @@ MOTOR_PIN = int(os.environ.get("NESTGUARD_MOTOR_PIN", "18"))
 # Analog channels: Grove Base HAT socket A0 -> 0, A2 -> 2 (ADS1115 board: A0 -> 0, A1 -> 1)
 TEMP_CH = int(os.environ.get("NESTGUARD_TEMP_CH", "0"))
 LIGHT_CH = int(os.environ.get("NESTGUARD_LIGHT_CH", "2"))
-I2C_BUS = 1
+def _is_jetson():
+    try:
+        return os.path.exists("/etc/nv_tegra_release") or \
+            "nvidia" in open("/proc/device-tree/model").read().lower()
+    except OSError:
+        return False
+
+
+JETSON = _is_jetson()
+# Pins 3/5 are I2C bus 1 on a Pi, bus 7 on a Jetson Orin Nano
+I2C_BUS = int(os.environ.get("NESTGUARD_I2C_BUS", "7" if JETSON else "1"))
 LCD_ADDR = int(os.environ.get("NESTGUARD_LCD_ADDR", "0x27"), 16)
 ADC_ADDR = int(os.environ.get("NESTGUARD_ADC_ADDR", "0x48"), 16)
-GPS_PORT = os.environ.get("NESTGUARD_GPS_PORT", "/dev/serial0")
+def _gps_port():
+    if os.environ.get("NESTGUARD_GPS_PORT"):
+        return os.environ["NESTGUARD_GPS_PORT"]
+    # header pins 8/10: Pi -> /dev/serial0; Jetson Orin -> ttyTHS0 (JetPack 5/6) or ttyTHS1 (JetPack 7)
+    for p in (["/dev/ttyTHS0", "/dev/ttyTHS1"] if JETSON else ["/dev/serial0"]):
+        if os.path.exists(p):
+            return p
+    return "/dev/serial0"
+
+
+GPS_PORT = _gps_port()
 VCC = 3.3                      # what the Grove sensors are powered from
 THERMISTOR_B = 3975            # Grove Temperature Sensor v1.0
 
@@ -68,12 +88,67 @@ def log(*a):
 
 
 # ---------------------------------------------------------------- hardware
+# BCM GPIO number -> physical header pin (for Jetson.GPIO, which uses BOARD numbering)
+BCM_TO_BOARD = {4: 7, 17: 11, 18: 12, 27: 13, 22: 15, 23: 16, 24: 18, 25: 22, 5: 29, 6: 31,
+                12: 32, 13: 33, 19: 35, 16: 36, 26: 37, 20: 38, 21: 40}
+
+
+class _JetsonLED:
+    """Tiny stand-in for gpiozero.LED on a Jetson (on / off / blink)."""
+    def __init__(self, bcm):
+        import Jetson.GPIO as GPIO
+        self.GPIO, self.pin = GPIO, BCM_TO_BOARD[bcm]
+        GPIO.setwarnings(False)
+        GPIO.setmode(GPIO.BOARD)
+        GPIO.setup(self.pin, GPIO.OUT, initial=GPIO.LOW)
+        self._blink = None
+
+    def _set(self, v):
+        self.GPIO.output(self.pin, self.GPIO.HIGH if v else self.GPIO.LOW)
+
+    def on(self):
+        self._blink = None
+        self._set(1)
+
+    def off(self):
+        self._blink = None
+        self._set(0)
+
+    @property
+    def value(self):
+        return self.GPIO.input(self.pin)
+
+    @value.setter
+    def value(self, v):
+        self.on() if v else self.off()
+
+    def blink(self, on_s, off_s):
+        token = object()
+        self._blink = token
+
+        def run():
+            while self._blink is token:
+                self._set(1)
+                time.sleep(on_s)
+                if self._blink is not token:
+                    break
+                self._set(0)
+                time.sleep(off_s)
+        threading.Thread(target=run, daemon=True).start()
+
+
+def make_led(bcm):
+    if JETSON:
+        return _JetsonLED(bcm)
+    from gpiozero import LED
+    return LED(bcm)
+
+
 class Lights:
     def __init__(self):
         self.red = self.green = None
         try:
-            from gpiozero import LED
-            self.red, self.green = LED(RED_PIN), LED(GREEN_PIN)
+            self.red, self.green = make_led(RED_PIN), make_led(GREEN_PIN)
         except Exception as e:
             log("[lights] disabled:", e)
 
@@ -99,6 +174,8 @@ class Motor:
     def __init__(self):
         self.m = None
         self.lock = threading.Lock()
+        if JETSON or os.environ.get("NESTGUARD_NO_MOTOR"):
+            return                              # no motor in this build (no transistor)
         try:
             from gpiozero import PWMOutputDevice
             self.m = PWMOutputDevice(MOTOR_PIN, frequency=200)
@@ -531,7 +608,8 @@ def make_handler(dev):
 
 
 def main():
-    log(f"NestGuard starting. Backend: {API}{CHECK_PATH}  Local API: port {PORT}")
+    log(f"NestGuard starting on {'Jetson' if JETSON else 'Raspberry Pi'}. Backend: {API}{CHECK_PATH}  "
+        f"I2C bus {I2C_BUS}, GPS {GPS_PORT}, local API port {PORT}")
     dev = Device()
     server = ThreadingHTTPServer(("0.0.0.0", PORT), make_handler(dev))
     threading.Thread(target=server.serve_forever, daemon=True).start()

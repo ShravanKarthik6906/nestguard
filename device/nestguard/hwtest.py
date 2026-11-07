@@ -15,8 +15,7 @@ import nestguard as ng
 
 
 def leds():
-    from gpiozero import LED
-    red, green = LED(ng.RED_PIN), LED(ng.GREEN_PIN)
+    red, green = ng.make_led(ng.RED_PIN), ng.make_led(ng.GREEN_PIN)
     for name, r, g in [("red", 1, 0), ("green", 0, 1), ("both = yellow", 1, 1), ("off", 0, 0)]:
         print(name)
         red.value, green.value = r, g
@@ -26,7 +25,7 @@ def leds():
 def sensors():
     s = ng.Sensors()
     if not s.bus:
-        sys.exit("No ADC found. Run: i2cdetect -y 1  (Grove HAT = 04 or 08, ADS1115 = 48)")
+        sys.exit(f"No ADC found. Run: i2cdetect -y -r {ng.I2C_BUS}  (Grove HAT = 04 or 08, ADS1115 = 48)")
     print("Using", s.kind, "- temp channel", ng.TEMP_CH, "light channel", ng.LIGHT_CH)
     while True:
         t, l = s.read()
@@ -37,7 +36,7 @@ def sensors():
 def lcd():
     s = ng.Screen()
     if not s.lcd:
-        sys.exit("LCD not found. Run: i2cdetect -y 1  (expect 27 or 3f), "
+        sys.exit(f"LCD not found. Run: i2cdetect -y -r {ng.I2C_BUS}  (expect 27 or 3f), "
                  "then set NESTGUARD_LCD_ADDR=0x3f if needed")
     s.write("NestGuard ready", "LCD test OK")
     print("Text sent. Blank or boxes? Turn the blue screw on the back slowly.")
