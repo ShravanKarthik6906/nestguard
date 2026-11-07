@@ -150,5 +150,25 @@ def score(lat, lon, date, zones, weather_mult=1.0, weather_reasons=()):
     else:
         message = "Clear to fly"
 
+    raptor_alert = None
+    if raptor_n:
+        raptor_alert = ("Hawks or eagles seen within 1 km. They can attack drones, "
+                        "especially near their nests. Watch the sky and land if one comes close.")
+
     return {"level": level, "score": s, "message": message, "reasons": reasons,
+            "raptor_alert": raptor_alert,
+            "nesting_until": nesting_until(nesting_now, date),
+            "base_risk": 1 - keep_out,                 # before weather; used by best_time
             "zones": [public_zone(z, date) for z in near]}
+
+
+MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August",
+          "September", "October", "November", "December"]
+
+
+def nesting_until(groups, date):
+    """Name of the month nesting ends for these groups (northern-hemisphere months)."""
+    if not groups:
+        return None
+    last = max(max(GROUPS[g]["months"]) for g in groups)
+    return MONTHS[last - 1]

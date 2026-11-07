@@ -19,6 +19,7 @@ import pathlib
 from fastapi import Body, FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 
+import explain
 import scoring
 import weather
 
@@ -105,7 +106,50 @@ def is_real(zones):
 RANK = {"green": 0, "yellow": 1, "red": 2}
 
 
-def score_spot(lat, lon, date):
+def hour_label(when, today):
+    day = ("Today" if when.date() == today else
+           "Tomorrow" if (when.date() - today).days == 1 else when.strftime("%b %d").replace(" 0", " "))
+    return day, when.strftime("%I %p").lstrip("0")
+
+
+def best_time(lat, lon, date, base_risk, nesting_until):
+    """U9: scan the next 12 daylight hours (today) or that day's daylight hours (other dates)."""
+    local_today = weather.local_now(lat, lon)
+    if date == local_today.date():
+        start = local_today.replace(minute=0, second=0, microsecond=0)
+        hs = weather.hours(lat, lon, date) + weather.hours(lat, lon, date + datetime.timedelta(days=1))
+        hs = [h for h in hs if start <= h[0] < start + datetime.timedelta(hours=12)]
+    else:
+        hs = weather.hours(lat, lon, date)
+    hs = [h for h in hs if h[2]]                       # daylight only
+    if not hs:
+        return None
+    rated = []
+    for when, w, _ in hs:
+        mult, _, w_min, _ = weather.assess(w)
+        lvl = scoring.level_for(round(min(1.0, base_risk * mult) * 100))
+        rated.append((when, max(lvl, w_min, key=lambda l: RANK[l])))
+    best = min(RANK[l] for _, l in rated)
+    # first run of consecutive hours at the best level
+    run = []
+    for when, lvl in rated:
+        if RANK[lvl] == best and (not run or when - run[-1] == datetime.timedelta(hours=1)):
+            run.append(when)
+        elif run:
+            break
+    day, a = hour_label(run[0], local_today.date())
+    _, b = hour_label(run[-1] + datetime.timedelta(hours=1), local_today.date())
+    window = f"{day} {a} to {b}"
+    if best == 0:
+        return window
+    if best == 2:
+        if nesting_until and scoring.level_for(round(base_risk * 100)) == "red":
+            return f"No safe window: nesting season here until the end of {nesting_until}"
+        return "No safe window in the next 12 hours"
+    return f"No clear window; least risky {window}"
+
+
+def score_spot(lat, lon, date, explain_it=False):
     zones = get_zones(lat, lon, 5)
     mult, w_reasons, w_min, checks = weather.assess(weather.conditions(lat, lon, date))  # U5/U6
     if is_real(zones):
@@ -113,6 +157,7 @@ def score_spot(lat, lon, date):
     else:
         out = mock_score(lat, lon, zones)
         out["reasons"] += w_reasons
+        out.update(raptor_alert=None, nesting_until=None, base_risk=out["score"] / 100)
     checks["wildlife"] = out["level"]
     if RANK[w_min] > RANK[out["level"]]:          # weather can make it stricter, never looser
         out["level"] = w_min
@@ -121,7 +166,15 @@ def score_spot(lat, lon, date):
         # put the weather reasons that decided it first
         out["reasons"] = w_reasons + [r for r in out["reasons"] if r not in w_reasons]
     out["checks"] = checks                        # {"wildlife", "safety", "legal"}
-    out["best_time"] = None            # U9: e.g. "Tomorrow 10 AM to 1 PM"
+    try:
+        out["best_time"] = best_time(lat, lon, date, out.pop("base_risk"), out.pop("nesting_until"))
+    except Exception as e:
+        print("best_time failed:", e)
+        out["best_time"] = None
+    out.pop("base_risk", None)
+    out.pop("nesting_until", None)
+    if explain_it:
+        out["why"] = explain.why(out)             # U9: Gemini, only when the app asks
     return out
 
 
@@ -135,8 +188,10 @@ def zones(lat: float, lon: float, radius_km: float = 5,
 
 
 @app.get("/check")
-def check(lat: float, lon: float, date: datetime.date = Query(default_factory=datetime.date.today)):
-    return score_spot(lat, lon, date)
+def check(lat: float, lon: float, date: datetime.date = Query(default_factory=datetime.date.today),
+          explain: bool = False):
+    """explain=true adds a Gemini "why" sentence (the app uses it; the device doesn't)."""
+    return score_spot(lat, lon, date, explain_it=explain)
 
 
 # --- device routes (the Pi polls these)

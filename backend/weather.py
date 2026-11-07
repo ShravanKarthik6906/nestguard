@@ -48,6 +48,7 @@ def _fetch(lat, lon, date):
     url = FORECAST if (today - date).days <= 80 else ARCHIVE
     params = {"latitude": lat, "longitude": lon, "hourly": ",".join(HOURLY),
               "start_date": date.isoformat(), "end_date": date.isoformat(),
+              "daily": "sunrise,sunset",
               "temperature_unit": "fahrenheit", "wind_speed_unit": "mph", "timezone": "auto"}
     if url == ARCHIVE:
         params["hourly"] = ",".join(h for h in HOURLY if h != "visibility")  # not in archive
@@ -56,8 +57,7 @@ def _fetch(lat, lon, date):
     return r.json()
 
 
-def conditions(lat, lon, date):
-    """Weather for one hour at this spot. Cached by ~1 km cell, date and hour."""
+def _day(lat, lon, date):
     key = f"{round(lat, 2)},{round(lon, 2)},{date.isoformat()}"
     if key not in _cache:
         try:
@@ -67,18 +67,44 @@ def conditions(lat, lon, date):
             print("weather fetch failed:", e)
             return None
     data = _cache[key]
-    if not data or "hourly" not in data:
-        return None
+    return data if data and "hourly" in data else None
+
+
+def local_now(lat, lon):
+    data = _day(lat, lon, datetime.date.today())
+    off = (data or {}).get("utc_offset_seconds", 0)
+    return datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) + datetime.timedelta(seconds=off)
+
+
+def hours(lat, lon, date):
+    """[(local datetime, weather dict, is_daylight)] for every hour of that date."""
+    data = _day(lat, lon, date)
+    if not data:
+        return []
     h = data["hourly"]
-    if date == datetime.date.today():
-        local = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) + datetime.timedelta(seconds=data.get("utc_offset_seconds", 0))
-        hour = local.hour
-    else:
-        hour = 12
-    hour = min(hour, len(h["time"]) - 1)
-    w = {name: (h.get(name) or [None] * 24)[hour] for name in HOURLY}
-    w["time"] = h["time"][hour]
-    return w
+    daily = data.get("daily") or {}
+    try:
+        rise = datetime.datetime.fromisoformat(daily["sunrise"][0])
+        sset = datetime.datetime.fromisoformat(daily["sunset"][0])
+    except (KeyError, IndexError, ValueError, TypeError):
+        rise = datetime.datetime.combine(date, datetime.time(7))
+        sset = datetime.datetime.combine(date, datetime.time(18))
+    out = []
+    for i, t in enumerate(h["time"]):
+        when = datetime.datetime.fromisoformat(t)
+        w = {name: (h.get(name) or [None] * len(h["time"]))[i] for name in HOURLY}
+        w["time"] = t
+        out.append((when, w, rise <= when < sset))
+    return out
+
+
+def conditions(lat, lon, date):
+    """Weather for one hour at this spot: the current hour for today, noon otherwise."""
+    hs = hours(lat, lon, date)
+    if not hs:
+        return None
+    hour = local_now(lat, lon).hour if date == datetime.date.today() else 12
+    return hs[min(hour, len(hs) - 1)][1]
 
 
 def assess(w):
@@ -97,7 +123,9 @@ def assess(w):
     if cold or wet:
         mult = 1.3
         parts = ([f"{t:.0f}F"] if cold else []) + (["rain"] if wet else [])
-        reasons.append(" and ".join(parts) + ": eggs chill faster if birds are flushed")
+        bird_note = " and ".join(parts) + ": eggs chill faster if birds are flushed"
+    else:
+        bird_note = None
 
     # U6: drone safety -> Wait
     if gust is not None and gust >= GUST_MPH:
@@ -120,6 +148,8 @@ def assess(w):
             reasons.append(f"Cloud base about {base_ft:.0f} ft: FAA needs 500 ft below clouds")
             checks["legal"] = "red"
 
+    if bird_note:
+        reasons.append(bird_note)                     # safety/legal reasons come first
     rank = {"green": 0, "yellow": 1, "red": 2}
     minimum = max(checks.values(), key=lambda l: rank[l])
     return mult, reasons, minimum, checks
