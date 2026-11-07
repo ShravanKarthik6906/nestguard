@@ -25,7 +25,8 @@ import weather
 
 app = FastAPI(title="NestGuard API")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
-
+from speak import router as speak_router
+app.include_router(speak_router)
 try:                                   # load backend/.env (MONGODB_URI, keys)
     from dotenv import load_dotenv
     load_dotenv(pathlib.Path(__file__).parent / ".env")

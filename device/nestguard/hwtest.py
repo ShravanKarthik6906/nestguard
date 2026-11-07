@@ -26,10 +26,11 @@ def leds():
 def sensors():
     s = ng.Sensors()
     if not s.bus:
-        sys.exit("ADC not found. Run: i2cdetect -y 1  (expect 48)")
+        sys.exit("No ADC found. Run: i2cdetect -y 1  (Grove HAT = 04 or 08, ADS1115 = 48)")
+    print("Using", s.kind, "- temp channel", ng.TEMP_CH, "light channel", ng.LIGHT_CH)
     while True:
         t, l = s.read()
-        print(f"A0 {s._volts(0):.3f} V -> {t} C    A1 {s._volts(1):.3f} V -> {l} % light")
+        print(f"temp {s._volts(ng.TEMP_CH):.3f} V -> {t} C    light {s._volts(ng.LIGHT_CH):.3f} V -> {l} %")
         time.sleep(1)
 
 

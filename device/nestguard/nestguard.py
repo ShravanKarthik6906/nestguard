@@ -41,7 +41,14 @@ YELLOW_BUFFER_M = 100          # yellow when within 100 m of a zone edge
 PUSH_HOLD_S = 60               # a pushed handoff wins over polling for 60 s
 PORT = int(os.environ.get("NESTGUARD_PORT", "8080"))
 
-RED_PIN, GREEN_PIN, MOTOR_PIN = 17, 27, 18     # BCM numbers (physical 11, 13, 12)
+# BCM GPIO numbers. Defaults = physical pins 11, 13, 12. If the LEDs are in Grove HAT
+# sockets instead, use that socket's number (D5 -> 5, D16 -> 16, D22 -> 22, ...).
+RED_PIN = int(os.environ.get("NESTGUARD_RED_PIN", "17"))
+GREEN_PIN = int(os.environ.get("NESTGUARD_GREEN_PIN", "27"))
+MOTOR_PIN = int(os.environ.get("NESTGUARD_MOTOR_PIN", "18"))
+# Analog channels: Grove Base HAT socket A0 -> 0, A2 -> 2 (ADS1115 board: A0 -> 0, A1 -> 1)
+TEMP_CH = int(os.environ.get("NESTGUARD_TEMP_CH", "0"))
+LIGHT_CH = int(os.environ.get("NESTGUARD_LIGHT_CH", "2"))
 I2C_BUS = 1
 LCD_ADDR = int(os.environ.get("NESTGUARD_LCD_ADDR", "0x27"), 16)
 ADC_ADDR = int(os.environ.get("NESTGUARD_ADC_ADDR", "0x48"), 16)
@@ -162,39 +169,66 @@ class Screen:
 
 
 class Sensors:
-    """Grove temperature (A0) and light (A1) through an ADS1115, read with smbus2."""
+    """Grove temperature + light sensors. Tries, in order:
+       1. Grove Base HAT's built-in ADC (I2C 0x04 = STM32 version, 0x08 = MM32 version)
+       2. an ADS1115 board (I2C 0x48)
+    Each read returns a 0-1 ratio of the 3.3 V supply."""
 
     def __init__(self):
-        self.bus = None
+        self.bus = self.kind = None
         try:
             from smbus2 import SMBus
             self.bus = SMBus(I2C_BUS)
-            self._volts(0)                       # fails now if the ADC is missing
         except Exception as e:
             log("[sensors] disabled:", e)
-            self.bus = None
+            return
+        for addr in (0x04, 0x08):
+            try:
+                self.addr = addr
+                self.kind = "hat"
+                self._ratio(TEMP_CH)
+                log(f"[sensors] Grove Base HAT ADC at {hex(addr)}")
+                return
+            except Exception:
+                pass
+        try:
+            self.addr, self.kind = ADC_ADDR, "ads1115"
+            self._ratio(TEMP_CH)
+            log(f"[sensors] ADS1115 at {hex(ADC_ADDR)}")
+            return
+        except Exception as e:
+            log("[sensors] disabled: no Grove HAT or ADS1115 found", e)
+        self.bus = self.kind = None
 
-    def _volts(self, channel):
-        # single-shot, AINx vs GND, +/-4.096 V range, 128 samples/s, comparator off
+    def _ratio(self, channel):
+        if self.kind == "hat":
+            reg = 0x10 + channel                     # raw 12-bit value (Seeed grove.py adc.py)
+            self.bus.write_byte(self.addr, reg)
+            raw = self.bus.read_word_data(self.addr, reg)
+            return raw / 4095
+        # ADS1115: single-shot, AINx vs GND, +/-4.096 V, 128 SPS, comparator off
         config = 0x8000 | ((0x4 + channel) << 12) | 0x0200 | 0x0100 | 0x0080 | 0x0003
-        self.bus.write_i2c_block_data(ADC_ADDR, 0x01, [config >> 8, config & 0xFF])
+        self.bus.write_i2c_block_data(self.addr, 0x01, [config >> 8, config & 0xFF])
         time.sleep(0.01)
-        hi, lo = self.bus.read_i2c_block_data(ADC_ADDR, 0x00, 2)
+        hi, lo = self.bus.read_i2c_block_data(self.addr, 0x00, 2)
         raw = (hi << 8) | lo
         if raw > 0x7FFF:
             raw -= 0x10000
-        return max(raw, 0) * 4.096 / 32768
+        return max(raw, 0) * 4.096 / 32768 / VCC
+
+    def _volts(self, channel):                       # used by hwtest.py
+        return self._ratio(channel) * VCC
 
     def read(self):
         """Returns (temp_c, light_pct); either can be None."""
         if not self.bus:
             return None, None
         try:
-            ratio = self._volts(0) / VCC
+            ratio = self._ratio(TEMP_CH)
             temp = None
             if 0.01 < ratio < 0.99:
                 temp = 1 / (math.log(1 / ratio - 1) / THERMISTOR_B + 1 / 298.15) - 273.15
-            light = min(100.0, self._volts(1) / VCC * 100)
+            light = min(100.0, self._ratio(LIGHT_CH) * 100)
             return (round(temp, 1) if temp is not None else None), round(light)
         except Exception as e:
             log("[sensors] read failed:", e)
