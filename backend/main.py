@@ -118,6 +118,8 @@ def score_spot(lat, lon, date):
         out["level"] = w_min
         out["message"] = ("Don't fly: below FAA weather minimums" if w_min == "red"
                           else "Wait: too windy or wet to fly safely")
+        # put the weather reasons that decided it first
+        out["reasons"] = w_reasons + [r for r in out["reasons"] if r not in w_reasons]
     out["checks"] = checks                        # {"wildlife", "safety", "legal"}
     out["best_time"] = None            # U9: e.g. "Tomorrow 10 AM to 1 PM"
     return out

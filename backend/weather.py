@@ -117,7 +117,7 @@ def assess(w):
     if low is not None and low >= 50 and t is not None and dew is not None:
         base_ft = max(0, (t - dew) / 4.4 * 1000)
         if base_ft < MIN_CLOUD_BASE_FT:
-            reasons.append(f"Clouds about {base_ft:.0f} ft (need 500 ft clearance)")
+            reasons.append(f"Cloud base about {base_ft:.0f} ft: FAA needs 500 ft below clouds")
             checks["legal"] = "red"
 
     rank = {"green": 0, "yellow": 1, "red": 2}
