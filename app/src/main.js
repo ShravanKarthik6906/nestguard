@@ -42,7 +42,7 @@ map.on('moveend', loadZonesSoon)
 let spot = null
 let checkId = 0 // only the newest answer is shown, even if an older one arrives late
 
-async function runCheck() {
+async function runCheck({ speak = true } = {}) {
   if (!spot) return
   const id = ++checkId
   showLoading()
@@ -50,19 +50,19 @@ async function runCheck() {
     const { data, source } = await check(spot.lat, spot.lon, $('date').value)
     if (id !== checkId) return
     showCheck(data)
-    announce(data)
+    announce(data, { force: speak })
     if (source !== 'live') setStatus('check · ' + source, source)
   } catch (err) {
     if (id === checkId) showCheckError('API unreachable: ' + err.message)
   }
 }
 
-export function pickSpot(lat, lon, { pan = false } = {}) {
+export function pickSpot(lat, lon, { pan = false, speak = true } = {}) {
   spot = { lat, lon }
   setPin(lat, lon)
   $('where').textContent = `${lat.toFixed(4)}, ${lon.toFixed(4)}`
   if (pan) map.setView([lat, lon], 14)
-  runCheck()
+  runCheck({ speak })
 }
 
 map.on('click', (e) => pickSpot(e.latlng.lat, e.latlng.lng))
@@ -105,7 +105,7 @@ $('demo-start').addEventListener('click', () => {
   startDemo(
     (p, i, n) => {
       $('demo-info').textContent = `Point ${i + 1}/${n}`
-      pickSpot(p.lat, p.lon)
+      pickSpot(p.lat, p.lon, { speak: i === 0 }) // walk: first point, then only level changes
     },
     (msg) => setStatus(msg, 'error'),
   )

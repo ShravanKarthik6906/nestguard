@@ -11,6 +11,7 @@ const audio = new Audio()
 const urls = new Map() // spoken text -> playable URL
 let clips = {}
 let lastLevel = null
+let speakId = 0 // only the newest announcement plays
 
 fetch('/audio/clips.json').then((r) => r.json()).then((c) => { clips = c }).catch(() => {})
 
@@ -52,17 +53,19 @@ async function play(url) {
   await audio.play()
 }
 
-export async function announce(result) {
-  if (!result || result.level === lastLevel) return
+// force: always speak (someone tapped something). Otherwise only when the level changes (demo walk).
+export async function announce(result, { force = false } = {}) {
+  if (!result || (!force && result.level === lastLevel)) return
   lastLevel = result.level
+  const id = ++speakId
   const text = spokenText(result.level, result.message)
   try {
     const url = await urlFor(text)
     if (!url) throw new Error('no clip')
-    if (lastLevel === result.level) await play(url) // skip if the level changed while loading
+    if (id === speakId) await play(url)
   } catch (err) {
     const name = clips[FALLBACK[result.level]]
-    if (name && lastLevel === result.level) play('/audio/' + name).catch(() => {})
+    if (name && id === speakId) play('/audio/' + name).catch(() => {})
     console.warn('speech:', err.message)
   }
 }
