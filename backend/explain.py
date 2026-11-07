@@ -82,7 +82,13 @@ def _ask(model, prompt, api_key):
     r = requests.post(URL.format(model=model), timeout=6,
                       headers={"x-goog-api-key": api_key, "Content-Type": "application/json"},
                       json={"contents": [{"parts": [{"text": prompt}]}],
-                            "generationConfig": {"maxOutputTokens": 120, "temperature": 0.4}})
+                            # thinking models spend part of this budget before writing, so keep it roomy
+                            "generationConfig": {"maxOutputTokens": 1024, "temperature": 0.4}})
     r.raise_for_status()
-    parts = r.json()["candidates"][0]["content"]["parts"]
-    return " ".join(p.get("text", "") for p in parts).strip() or None
+    cand = r.json()["candidates"][0]
+    parts = (cand.get("content") or {}).get("parts") or []
+    text = " ".join(p.get("text", "") for p in parts if not p.get("thought")).strip()
+    if cand.get("finishReason") == "MAX_TOKENS" or len(text) < 20:
+        print(f"Gemini {model} gave a cut-off answer: {text!r}")
+        return None                                   # try the next model / template
+    return text
