@@ -1,3 +1,3 @@
-{"level": "red", "score": 82, "message": "Nesting zone, climb to 300 ft",
- "reasons": ["Hawk or eagle sightings within 1 km", "Nesting season for raptor birds", "40F and rain"],
- "zones": [], "best_time": "Tomorrow 10 AM to 1 PM"}
+{"level": "red", "score": 75, "message": "Nesting zone close by, stay 170 m away or climb to 300 ft",
+ "reasons": ["Hawk or eagle sightings within 1 km", "Colony nesters nearby (terns, gulls, herons)", "Nesting season for colony, large, medium, raptor, small birds", "79 recent sightings within 1 km"],
+ "zones": [], "best_time": null}

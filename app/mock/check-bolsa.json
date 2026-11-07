@@ -1,3 +1,3 @@
-{"level": "red", "score": 94, "message": "Inside a nesting zone, don't fly here",
- "reasons": ["Colony nesters nearby (terns, gulls, herons)", "Nesting season for colony birds", "Hawk or eagle sightings within 1 km", "38 recent sightings within 1 km"],
+{"level": "red", "score": 98, "message": "Nesting zone close by, stay 170 m away or climb to 300 ft",
+ "reasons": ["Hawk or eagle sightings within 1 km", "Colony nesters nearby (terns, gulls, herons)", "Nesting season for colony, large, medium, raptor, small birds", "149 recent sightings within 1 km"],
  "zones": [], "best_time": null}
