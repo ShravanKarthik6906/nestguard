@@ -22,14 +22,11 @@ async function poll() {
   const online = t.ts && (Math.abs(age) < FRESH_MS || now - lastChange < FRESH_MS)
 
   $('device').classList.toggle('offline', !online)
-  if (!online) {
-    $('device-readings').textContent = 'Device offline'
-    return
-  }
-  const parts = []
-  if (typeof t.temp_c === 'number') parts.push(`🌡 ${t.temp_c.toFixed(1)} °C (${Math.round(t.temp_c * 9 / 5 + 32)} °F)`)
-  if (typeof t.light_pct === 'number') parts.push(`☀ ${Math.round(t.light_pct)}% light`)
-  $('device-readings').textContent = parts.join('   ·   ') || 'Online, no readings yet'
+  $('device-state').textContent = online ? 'Online' : 'Offline'
+  const temp = online && typeof t.temp_c === 'number'
+  const light = online && typeof t.light_pct === 'number'
+  $('device-temp').textContent = temp ? `${t.temp_c.toFixed(1)} °C (${Math.round(t.temp_c * 9 / 5 + 32)} °F)` : 'Not available'
+  $('device-light').textContent = light ? `${Math.round(t.light_pct)} %` : 'Not available'
 }
 
 export function startTelemetry() {

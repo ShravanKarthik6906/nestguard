@@ -1,15 +1,16 @@
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-export const COLORS = { green: '#2e9d4f', yellow: '#e6a700', red: '#d93025' }
+export const COLORS = { green: '#2f9e5b', yellow: '#d99a1e', red: '#d64545' }
 
 let map, zoneLayer, pin
 
 export function createMap(el, center) {
   map = L.map(el).setView([center.lat, center.lon], 14)
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors',
+    subdomains: 'abcd',
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
   }).addTo(map)
   zoneLayer = L.layerGroup().addTo(map)
   return map
@@ -22,7 +23,7 @@ export function drawZones(zones) {
   for (const z of zones) {
     const color = COLORS[z.level] || COLORS.yellow
     L.circle([z.lat, z.lon], {
-      radius: z.radius_m, color, fillColor: color, fillOpacity: 0.25, weight: 1,
+      radius: z.radius_m, color, fillColor: color, fillOpacity: 0.22, weight: 1,
       interactive: false,
     }).addTo(zoneLayer)
   }
@@ -30,6 +31,6 @@ export function drawZones(zones) {
 
 // The pilot's chosen spot (never a bird location).
 export function setPin(lat, lon) {
-  if (!pin) pin = L.circleMarker([lat, lon], { radius: 9, color: '#17324d', weight: 3, fillColor: '#fff', fillOpacity: 1 }).addTo(map)
+  if (!pin) pin = L.circleMarker([lat, lon], { radius: 8, color: '#0e1013', weight: 3, fillColor: '#e8ebef', fillOpacity: 1 }).addTo(map)
   else pin.setLatLng([lat, lon])
 }

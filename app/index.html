@@ -3,47 +3,88 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0e1013" />
     <title>NestGuard</title>
   </head>
   <body>
-    <header class="card">
-      <h1>NestGuard</h1>
-      <label>Date <input type="date" id="date" /></label>
+    <header class="bar">
+      <div class="brand"><span class="wordmark">NestGuard</span><span class="sub">Pre-flight check</span></div>
+      <label class="field">Date <input type="date" id="date" /></label>
       <span id="status" class="status"></span>
     </header>
 
-    <div id="map" class="card"></div>
+    <main class="layout">
+      <section class="map-col">
+        <div id="map"></div>
+        <div class="legend">
+          <span><i class="sw red"></i>Don't fly</span>
+          <span><i class="sw yellow"></i>Wait</span>
+          <span><i class="sw green"></i>Go</span>
+          <span class="note">Zones are blurred to a 1 km grid. Exact nest locations are never shown.</span>
+        </div>
+      </section>
 
-    <section class="card panel">
-      <div class="row presets">
-        <button data-preset="rpi-today">RPI today</button>
-        <button data-preset="rpi-may">RPI in nesting season</button>
-        <button data-preset="bolsa">Bolsa Chica 2021</button>
-      </div>
-      <div class="row">
-        <button id="demo-start" class="demo">▶ Demo walk (Bolsa Chica)</button>
-        <button id="demo-stop" class="stop" hidden>■ Stop</button>
-        <span id="demo-info" class="where"></span>
-      </div>
-      <div class="row">
-        <span id="where" class="where">Tap the map to pick a spot</span>
-        <button id="locate">Use my location</button>
-      </div>
+      <section class="panel-col">
+        <div class="block">
+          <h2 class="label">Scenarios</h2>
+          <div class="row">
+            <button data-preset="rpi-today">RPI today</button>
+            <button data-preset="rpi-may">RPI, May 2027</button>
+            <button data-preset="bolsa">Bolsa Chica, May 13 2021</button>
+          </div>
+          <div class="row">
+            <button id="demo-start" class="primary">Start demo walk</button>
+            <button id="demo-stop" class="stop" hidden>Stop demo</button>
+            <span id="demo-info" class="muted mono"></span>
+          </div>
+          <div class="row">
+            <span id="where" class="muted mono">Tap the map to pick a spot</span>
+            <button id="locate" class="ghost">Use my location</button>
+          </div>
+        </div>
 
-      <div id="banner" class="banner none">Pick a spot</div>
-      <div id="result" hidden>
-        <p class="message"><strong id="message"></strong> <span class="score">Risk <b id="score"></b>/100</span></p>
-        <p class="best">Best time to fly: <b id="best-time">—</b></p>
-        <div id="checks" class="checks"></div>
-        <p id="raptor" class="raptor" hidden></p>
-        <p id="why" class="why" hidden></p>
-        <ul id="reasons"></ul>
-      </div>
-    </section>
+        <div id="banner" class="verdict none" aria-live="polite">Pick a spot</div>
 
-    <section id="device" class="card panel device offline">
-      <strong>Device</strong> <span id="device-readings">Device offline</span>
-    </section>
+        <div id="result" hidden>
+          <p id="message" class="message"></p>
+          <dl class="facts">
+            <div><dt>Bird risk</dt><dd><span id="score"></span> / 100</dd></div>
+            <div><dt>Best time to fly</dt><dd id="best-time"></dd></div>
+          </dl>
+
+          <h2 class="label">Checks</h2>
+          <ul id="checks" class="checks"></ul>
+
+          <div id="raptor" class="alert" hidden>
+            <span class="label">Hawk alert</span>
+            <p id="raptor-text"></p>
+          </div>
+
+          <div id="why-block" class="why" hidden>
+            <span class="label">Gemini</span>
+            <p id="why"></p>
+          </div>
+
+          <h2 class="label">Reasons</h2>
+          <ul id="reasons" class="reasons"></ul>
+        </div>
+
+        <div id="device" class="block device offline">
+          <h2 class="label">Controller device</h2>
+          <dl class="facts">
+            <div><dt>Status</dt><dd id="device-state">Offline</dd></div>
+            <div><dt>Temperature</dt><dd id="device-temp">Not available</dd></div>
+            <div><dt>Light</dt><dd id="device-light">Not available</dd></div>
+          </dl>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <a href="/privacy.html">Privacy</a>
+      <a href="/terms.html">Terms</a>
+      <span class="muted">NestGuard, HackRPI 2026</span>
+    </footer>
 
     <script type="module" src="/src/main.js"></script>
   </body>

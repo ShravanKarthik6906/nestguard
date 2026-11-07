@@ -7,6 +7,9 @@ const target = process.env.API_TARGET || 'http://129.161.92.50:8000'
 const paths = ['/zones', '/check', '/device', '/speak', '/docs', '/openapi.json']
 
 export default defineConfig({
+  build: {
+    rollupOptions: { input: { main: 'index.html', privacy: 'privacy.html', terms: 'terms.html' } },
+  },
   server: {
     proxy: Object.fromEntries(paths.map((p) => [p, { target, changeOrigin: true }])),
   },

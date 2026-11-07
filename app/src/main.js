@@ -1,3 +1,7 @@
+import '@fontsource/b612/400.css'
+import '@fontsource/b612/700.css'
+import '@fontsource/b612-mono/400.css'
+import '@fontsource/b612-mono/700.css'
 import './style.css'
 import { RPI, USE_MOCK } from './config.js'
 import { getZones, check, explain } from './api.js'
@@ -31,7 +35,7 @@ async function loadZones() {
   try {
     const { data, source } = await getZones(c.lat, c.lng, radiusKm, $('date').value)
     drawZones(data)
-    setStatus(`${data.length} zones · ${source}`, source)
+    setStatus(`${{ live: 'Live data', cached: 'Cached data', mock: 'Offline mock data' }[source]}, ${data.length} zones`, source)
   } catch (err) {
     setStatus('API unreachable: ' + err.message, 'error')
   }
@@ -41,6 +45,7 @@ map.on('moveend', loadZonesSoon)
 
 // ---- check
 let spot = null
+const narrow = matchMedia('(max-width: 959px)') // phones: bring the answer into view
 let checkId = 0 // only the newest answer is shown, even if an older one arrives late
 
 async function runCheck({ speak = true, why = speak } = {}) {
@@ -52,7 +57,8 @@ async function runCheck({ speak = true, why = speak } = {}) {
     if (id !== checkId) return
     showCheck(data)
     announce(data, { force: speak })
-    if (source !== 'live') setStatus('check · ' + source, source)
+    if (source !== 'live') setStatus(source === 'mock' ? 'Offline mock data' : 'Cached result (network is slow)', source)
+    if (speak && narrow.matches) $('banner').scrollIntoView({ behavior: 'smooth', block: 'start' })
     if (why) loadWhy(id) // someone tapped: ask Gemini why (never during the walk)
     else showWhy(null)
   } catch (err) {
@@ -117,7 +123,7 @@ $('demo-start').addEventListener('click', () => {
   map.setView([33.715, -118.025], 14)
   startDemo(
     (p, i, n) => {
-      $('demo-info').textContent = `Point ${i + 1}/${n}`
+      $('demo-info').textContent = `Point ${i + 1} of ${n}`
       pickSpot(p.lat, p.lon, { speak: i === 0, why: false }) // walk: first point, then only level changes
     },
     (msg) => setStatus(msg, 'error'),
