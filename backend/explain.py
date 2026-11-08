@@ -17,17 +17,18 @@ URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateC
 _cache = {}
 
 PROMPT = """Explain a drone pre-flight result to a hobby drone pilot in ONE or TWO short sentences (max 35 words).
-Rules: start directly with the advice (no greeting, don't introduce yourself). Use only the facts below;
-do not invent species, numbers or places. The score is ONLY the bird-disturbance risk (0-100, under 30 is low,
-60+ is high). The overall result can be stricter than the score because of wind or FAA weather rules - if so,
-say that the weather or the FAA rule is the reason, not the birds.
+Start directly with the advice (no greeting, don't introduce yourself). Use only the facts below;
+do not invent species, numbers or places.
 Overall result: {label}
-Bird risk score: {score}/100
-Checks: {checks}
+What caused it: {cause}
+{not_cause}
 Reasons (most important first): {reasons}
 Advice already shown: {message}
-
 """
+
+CAUSE = {"wildlife": "nesting birds and bird activity nearby (bird risk score {score}/100)",
+         "safety": "wind or rain that makes flying unsafe",
+         "legal": "FAA weather rules (visibility or cloud clearance)"}
 
 LABEL = {"green": "Go", "yellow": "Wait", "red": "Don't fly"}
 
@@ -43,15 +44,25 @@ def fallback(result):
 
 
 def why(result):
-    key = (result["level"], result["score"], tuple(result.get("reasons", [])), result.get("message"))
+    key = (result["level"], result["score"], tuple(result.get("reasons", [])), result.get("message"),
+           tuple(sorted((result.get("checks") or {}).items())))
     if key in _cache:
         return _cache[key]
     api_key = os.environ.get("GEMINI_API_KEY")
     text = None
     if api_key:
-        checks = ", ".join(f"{k} {v}" for k, v in (result.get("checks") or {}).items() if v)
-        prompt = PROMPT.format(label=LABEL[result["level"]], score=result["score"],
-                               checks=checks or "not available",
+        checks = result.get("checks") or {}
+        bad = [k for k in ("legal", "safety", "wildlife") if checks.get(k) in ("red", "yellow")]
+        if result["level"] == "green" or not bad:
+            cause = "all checks passed (birds, weather and FAA rules are all fine)"
+            not_cause = "Say it is clear to fly; mention any caution in the reasons briefly."
+        else:
+            cause = "; ".join(CAUSE[k].format(score=result["score"]) for k in bad)
+            ok = [k for k in ("wildlife", "safety", "legal") if k not in bad and checks.get(k) == "green"]
+            names = {"wildlife": "birds", "safety": "wind or rain", "legal": "weather or FAA rules"}
+            not_cause = ("These checks PASSED, so do NOT mention them as a reason: "
+                         + ", ".join(names[k] for k in ok) + ".") if ok else ""
+        prompt = PROMPT.format(label=LABEL[result["level"]], cause=cause, not_cause=not_cause,
                                reasons="; ".join(result.get("reasons", [])) or "none",
                                message=result.get("message", ""))
         for model in [MODEL] + [m for m in BACKUP_MODELS if m != MODEL]:

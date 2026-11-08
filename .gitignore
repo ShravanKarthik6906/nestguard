@@ -226,3 +226,4 @@ __pycache__/
 backend/audio_cache/
 app/node_modules/
 app/dist/
+backend/data/

@@ -154,6 +154,36 @@ def best_time(lat, lon, date, base_risk, nesting_until):
     return f"No clear window; least risky {window}"
 
 
+DIRECTIONS = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"]
+
+
+def safer_spot(lat, lon, date, level, weather_min):
+    """Nearest nearby spot (0.5-3 km, 8 directions) with a better wildlife level, using the same
+    weather (it is the same area). None when it's already Go, or when the weather is the problem."""
+    if level == "green" or RANK[weather_min] >= RANK[level]:
+        return None                                    # moving won't fix the weather
+    zones = get_zones(lat, lon, 8)
+    if not is_real(zones):
+        return None
+    best = None
+    for km in (0.5, 1, 1.5, 2, 3):
+        for i, name in enumerate(DIRECTIONS):
+            ang = math.radians(45 * i)
+            clat = lat + km / 111.0 * math.cos(ang)
+            clon = lon + km / (111.0 * math.cos(math.radians(lat))) * math.sin(ang)
+            r = scoring.score(clat, clon, date, zones)
+            cand_level = max(r["level"], weather_min, key=lambda l: RANK[l])
+            if RANK[cand_level] < RANK[level] and (best is None or RANK[cand_level] < RANK[best["level"]]
+                                                   or (cand_level == best["level"] and r["score"] < best["score"]
+                                                       and km == best["distance_km"])):
+                best = {"lat": round(clat, 3), "lon": round(clon, 3), "distance_km": km,
+                        "direction": name, "level": cand_level, "score": r["score"],
+                        "label": f"{km:g} km {name}: {scoring.LABEL_WORD[cand_level]}"}
+        if best and best["level"] == "green":
+            break                                      # nearest Go found; don't look farther
+    return best
+
+
 def score_spot(lat, lon, date, explain_it=False):
     zones = get_zones(lat, lon, 5)
     mult, w_reasons, w_min, checks = weather.assess(weather.conditions(lat, lon, date))  # U5/U6
@@ -171,6 +201,11 @@ def score_spot(lat, lon, date, explain_it=False):
         # put the weather reasons that decided it first
         out["reasons"] = w_reasons + [r for r in out["reasons"] if r not in w_reasons]
     out["checks"] = checks                        # {"wildlife", "safety", "legal"}
+    try:
+        out["safer_spot"] = safer_spot(lat, lon, date, out["level"], w_min)
+    except Exception as e:
+        print("safer_spot failed:", e)
+        out["safer_spot"] = None
     try:
         out["best_time"] = best_time(lat, lon, date, out.pop("base_risk"), out.pop("nesting_until"))
     except Exception as e:

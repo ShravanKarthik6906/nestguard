@@ -17,6 +17,7 @@ import datetime
 import math
 
 RED_AT, YELLOW_AT = 60, 30
+LABEL_WORD = {"green": "Go", "yellow": "Wait", "red": "Don't fly"}
 NEAR_KM = 2.0                      # zones farther than this from the pilot are ignored
 
 # species groups: name keywords, keep-away buffer (from the build plan), nesting months
