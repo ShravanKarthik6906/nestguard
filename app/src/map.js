@@ -42,9 +42,12 @@ export function createMap(el, center) {
 export function drawZones(zones) {
   zoneLayer.clearLayers()
   for (const z of zones) {
-    const color = COLORS[band(riskOf(z)).cls] || COLORS.yellow
+    const cls = band(riskOf(z)).cls
+    const color = COLORS[cls] || COLORS.yellow
+    const low = cls === 'green' // low bird risk: faint dashed outline, so it never reads as "safe to fly"
     L.circle([z.lat, z.lon], {
-      radius: z.radius_m, color, fillColor: color, fillOpacity: 0.3, weight: 2,
+      radius: z.radius_m, color, fillColor: color,
+      fillOpacity: low ? 0 : 0.3, weight: low ? 1 : 2, opacity: low ? 0.55 : 1, dashArray: low ? '4 6' : null,
       interactive: false,
     }).addTo(zoneLayer)
   }
@@ -71,4 +74,11 @@ export function drawPowerlines(lines) {
 export function showPowerlines(on) {
   if (on) powerLayer.addTo(map)
   else powerLayer.remove()
+}
+
+// Colour the pin with the overall risk at that spot (the zones only show bird risk).
+export function setPinRisk(cls) {
+  if (!pin) return
+  const fill = COLORS[cls] || '#e8ebef'
+  pin.setStyle({ fillColor: fill, color: '#0e1013', radius: 9 })
 }

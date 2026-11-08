@@ -94,10 +94,7 @@ below()
 if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
   const c = document.createElement('div')
   c.className = 'prop-cursor'
-  c.innerHTML = `<svg viewBox="0 0 40 40" aria-hidden="true">
-    <path d="M20 20 C 15 17, 6 15, 3 18 C 1 20, 4 22, 9 22 C 14 22, 18 21, 20 20 Z" fill="#e8ebef"/>
-    <path d="M20 20 C 25 23, 34 25, 37 22 C 39 20, 36 18, 31 18 C 26 18, 22 19, 20 20 Z" fill="#e8ebef"/>
-    <circle cx="20" cy="20" r="3.2" fill="#b59a3a"/></svg>`
+  c.innerHTML = `<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M12 12 L36 36 M36 12 L12 36" stroke="#8a929d" stroke-width="2.6" stroke-linecap="round"/><g class="rot" style="transform-origin:12px 12px"><circle cx="12" cy="12" r="7.5" fill="rgba(232,235,239,0.12)"/><path d="M5 12 L19 12" stroke="#e8ebef" stroke-width="1.6" stroke-linecap="round"/></g><g class="rot" style="transform-origin:36px 12px"><circle cx="36" cy="12" r="7.5" fill="rgba(232,235,239,0.12)"/><path d="M29 12 L43 12" stroke="#e8ebef" stroke-width="1.6" stroke-linecap="round"/></g><g class="rot" style="transform-origin:12px 36px"><circle cx="12" cy="36" r="7.5" fill="rgba(232,235,239,0.12)"/><path d="M5 36 L19 36" stroke="#e8ebef" stroke-width="1.6" stroke-linecap="round"/></g><g class="rot" style="transform-origin:36px 36px"><circle cx="36" cy="36" r="7.5" fill="rgba(232,235,239,0.12)"/><path d="M29 36 L43 36" stroke="#e8ebef" stroke-width="1.6" stroke-linecap="round"/></g><rect x="18" y="16" width="12" height="16" rx="4" fill="#e8ebef"/><circle cx="24" cy="18.5" r="1.6" fill="#2f9e5b"/></svg>`
   document.body.append(c)
   addEventListener('pointermove', (e) => {
     c.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`

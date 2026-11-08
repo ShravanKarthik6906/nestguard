@@ -62,6 +62,8 @@ input[type='date'] {
 .sw.red { background: rgba(214, 69, 69, 0.3); border-color: var(--stop); }
 .sw.yellow { background: rgba(217, 154, 30, 0.3); border-color: var(--wait); }
 .sw.green { background: rgba(47, 158, 91, 0.3); border-color: var(--go); }
+.sw.low { background: transparent; border-style: dashed; }
+.legend-title { color: var(--text); }
 .sw.line { height: 2px; width: 18px; border: 0; vertical-align: 3px; background: radial-gradient(circle, #f2f4f6 2.5px, transparent 3px) 0 50% / 9px 6px repeat-x, linear-gradient(#f2f4f6, #f2f4f6); }
 .toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text); }
 .toggle input { accent-color: #f2f4f6; margin: 0; }
