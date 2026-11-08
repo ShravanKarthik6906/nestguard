@@ -86,21 +86,26 @@ Then **tell Ryan**: `NESTGUARD_API=https://<the-url>` (no port, no trailing slas
 
 ## When the domain is ready (GoDaddy)
 
-1. In the domain's DNS settings add an **A record**: name `@`, value `IP`, TTL 600.
-2. Wait until `ping yourdomain.xyz` on your Mac shows the IP (5-60 min).
-3. On the server:
+1. GoDaddy, **My Products**, the domain, **DNS** (Manage DNS):
+   - Edit the existing **A** record with name `@` (it points at GoDaddy's "Parked" page) to
+     value `IP`, TTL 600 (or the shortest offered). If there is none, add it.
+   - Edit or add a **CNAME** record: name `www`, value `@`.
+   - Leave the NS and SOA records alone. Domain forwarding must be off.
+2. Wait until `dig +short yourdomain.xyz` (or `ping yourdomain.xyz`) on your Mac shows the IP (5-60 min).
+3. On the server, once:
    ```
-   cd /srv/nestguard && bash deploy/setup.sh yourdomain.xyz
+   cd /srv/nestguard && git pull && bash deploy/setup.sh yourdomain.xyz
    ```
-   Both the domain and the sslip.io URL keep working. Tell Ryan the domain URL.
+   Caddy gets the https certificate by itself. The domain is remembered, so later updates
+   don't need it. The sslip.io URL keeps working too. Tell Ryan the domain URL.
 
 ## Updating after new commits
 
 ```
 ssh root@IP
-cd /srv/nestguard && git pull && bash deploy/setup.sh yourdomain.xyz
+cd /srv/nestguard && git pull && bash deploy/setup.sh
 ```
-(Leave out the domain if you don't have one yet.)
+(The domain is remembered from the first time it was given.)
 
 ## Final voice clips (after feature freeze)
 
