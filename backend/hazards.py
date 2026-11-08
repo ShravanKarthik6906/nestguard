@@ -165,13 +165,14 @@ def powerlines(lat, lon, radius_km=1.0):
 
 # ------------------------------------------------------------------ air quality
 def us_aqi(lat, lon, date):
-    key = f"aqi:{round(lat, 2)},{round(lon, 2)},{date.isoformat()}"
+    lat, lon = round(lat, 1), round(lon, 1)                 # air quality is regional too
+    key = f"aqi:{lat},{lon},{date.isoformat()}"
     hit = _cache.get(key)
     if hit and time.time() - hit["t"] < 3600:
         return hit["v"]
     try:
         r = requests.get(AQ_URL, timeout=8, headers=UA, params={
-            "latitude": round(lat, 2), "longitude": round(lon, 2), "hourly": "us_aqi",
+            "latitude": lat, "longitude": lon, "hourly": "us_aqi",
             "start_date": date.isoformat(), "end_date": date.isoformat(), "timezone": "auto"})
         r.raise_for_status()
         vals = [v for v in r.json().get("hourly", {}).get("us_aqi", []) if v is not None]

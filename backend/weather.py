@@ -57,14 +57,24 @@ def _fetch(lat, lon, date):
     return r.json()
 
 
+_fail_until = {}
+
+
 def _day(lat, lon, date):
-    key = f"{round(lat, 2)},{round(lon, 2)},{date.isoformat()}"
+    # weather is shared across a ~10 km cell: it doesn't change over a few km, and it means far
+    # fewer requests (Open-Meteo rate limits). A failed cell is retried after 60 s, not every check.
+    lat, lon = round(lat, 1), round(lon, 1)
+    key = f"{lat},{lon},{date.isoformat()}"
     if key not in _cache:
+        import time as _t
+        if _t.time() < _fail_until.get(key, 0):
+            return None
         try:
-            _cache[key] = _fetch(round(lat, 2), round(lon, 2), date)
+            _cache[key] = _fetch(lat, lon, date)
             _save_cache()
         except Exception as e:
             print("weather fetch failed:", e)
+            _fail_until[key] = _t.time() + 60
             return None
     data = _cache[key]
     return data if data and "hourly" in data else None
