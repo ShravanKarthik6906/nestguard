@@ -1,4 +1,5 @@
 import { USE_MOCK } from './config.js'
+import { sortHazards } from './hazards.js'
 
 // Speaks the check result out loud when the level changes.
 // Order: pre-generated clip (offline, free) -> /speak (Fish Audio via our backend)
@@ -25,9 +26,12 @@ function unlock() {
 window.addEventListener('pointerdown', unlock)
 
 // Same rule as backend/make_clips.py: say the level first unless the message already does.
-export function spokenText(level, message) {
+// If a hazard is red, speak the worst red hazard's detail instead, e.g. "Don't fly. Power line 40 meters away."
+const units = (t) => t.replace(/(\d)\s?m\b/g, '$1 meters').replace(/(\d)\s?km\b/g, '$1 kilometers').replace(/(\d)\s?ft\b/g, '$1 feet')
+export function spokenText(level, message, hazards) {
   const label = LABELS[level] || 'Wait'
-  const m = (message || '').trim()
+  const red = sortHazards(hazards).find((h) => h.level === 'red' && h.detail)
+  const m = units((red ? red.detail : message || '').trim().replace(/[.]$/, ''))
   return m.toLowerCase().startsWith(label.toLowerCase()) ? m : `${label}. ${m}`.trim()
 }
 
@@ -58,7 +62,7 @@ export async function announce(result, { force = false } = {}) {
   if (!result || (!force && result.level === lastLevel)) return
   lastLevel = result.level
   const id = ++speakId
-  const text = spokenText(result.level, result.message)
+  const text = spokenText(result.level, result.message, result.hazards)
   try {
     const url = await urlFor(text)
     if (!url) throw new Error('no clip')

@@ -177,4 +177,4 @@ $('demo-stop').addEventListener('click', stopWalk)
 loadZones()
 loadPowerlines()
 startTelemetry()
-if (USE_MOCK) document.title = 'NestGuard (mock)'
+if (USE_MOCK) document.title += ' (mock)'

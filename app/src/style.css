@@ -31,6 +31,7 @@ body {
 .brand { display: flex; align-items: baseline; gap: 12px; }
 .wordmark { font-weight: 700; font-size: 18px; letter-spacing: 0.01em; }
 .sub { color: var(--muted); font-size: 13px; }
+.sub b { color: var(--text); font-weight: 700; }
 .field { display: flex; align-items: center; gap: 8px; font-family: 'B612 Mono', monospace; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
 input[type='date'] {
   background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: var(--r);
@@ -169,3 +170,16 @@ dd { margin: 0; text-align: right; }
   .panel-col { padding: 0 16px 20px; }
   .legend { padding: 10px 16px; }
 }
+
+/* hazard rows: glyph, name, detail, colored dot; worst first */
+.hazards { list-style: none; margin: 0 0 18px; padding: 0; }
+.hazard { display: grid; grid-template-columns: 18px 7.5em 1fr 10px; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); }
+.hazard:last-child { border-bottom: 1px solid var(--line); }
+.glyph { width: 16px; height: 16px; fill: none; stroke: var(--muted); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.hazard .name { font-family: 'B612 Mono', monospace; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.hazard .detail { font-size: 14px; }
+.dot { width: 10px; height: 10px; justify-self: end; background: var(--muted); }
+.dot.green { background: var(--go); } .dot.yellow { background: var(--wait); } .dot.red { background: var(--stop); }
+.hazard:has(.dot.red) .glyph { stroke: var(--stop); }
+.hazard:has(.dot.red) .name { color: var(--stop); }
+@media (max-width: 600px) { .hazard { grid-template-columns: 18px 1fr 10px; } .hazard .detail { grid-column: 2; } .hazard .name { grid-column: 2; } .dot { grid-row: 1; grid-column: 3; } }

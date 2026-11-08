@@ -25,16 +25,30 @@ LABELS = {"green": "Go", "yellow": "Wait", "red": "Don't fly"}
 # Fallbacks the app plays if /speak is unreachable (one per level).
 PHRASES = ["Go. Clear to fly.", "Wait. Check the warnings before you fly.", "Don't fly."]
 
-PRESETS = [(42.7302, -73.6788, None), (42.7302, -73.6788, "2027-05-15"), (33.70, -118.04, "2021-05-13")]
+PRESETS = [(42.7302, -73.6788, None), (42.7302, -73.6788, "2027-05-15"), (33.70, -118.04, "2021-05-13"),
+           (42.7493, -73.694138, None)]
 WALK = [(round(33.725 + (33.705 - 33.725) * i / 9, 5), round(-118.005 + (-118.045 + 118.005) * i / 9, 5), "2021-05-13")
         for i in range(10)]
 
 
-def spoken(level, message):
-    """Same rule as app/src/speech.js: say the level first unless the message already does."""
+RANK = {"red": 0, "yellow": 1, "green": 2}
+ORDER = ["powerlines", "raptors", "wind", "clouds", "visibility", "rain", "nesting", "crowd", "migration", "air"]
+
+
+def units(t):
+    t = re.sub(r"(\d)\s?m\b", r"\1 meters", t)
+    t = re.sub(r"(\d)\s?km\b", r"\1 kilometers", t)
+    return re.sub(r"(\d)\s?ft\b", r"\1 feet", t)
+
+
+def spoken(level, message, hazards=None):
+    """Same rule as app/src/speech.js: worst red hazard's detail if any, else the message;
+    say the level first unless the text already does."""
     label = LABELS.get(level, "Wait")
-    message = (message or "").strip()
-    return message if message.lower().startswith(label.lower()) else f"{label}. {message}".strip()
+    reds = sorted((h for h in (hazards or []) if h.get("level") == "red" and h.get("detail")),
+                  key=lambda h: ORDER.index(h["type"]) if h.get("type") in ORDER else 99)
+    text = units((reds[0]["detail"] if reds else message or "").strip().rstrip("."))
+    return text if text.lower().startswith(label.lower()) else f"{label}. {text}".strip()
 
 
 def from_api(api):
@@ -49,7 +63,7 @@ def from_api(api):
             print("failed:", e)
             continue
         print(d["level"])
-        out.add(spoken(d["level"], d["message"]))
+        out.add(spoken(d["level"], d["message"], d.get("hazards")))
     return sorted(out)
 
 

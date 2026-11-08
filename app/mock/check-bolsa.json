@@ -15,5 +15,53 @@
   "wildlife": "red",
   "safety": "green",
   "legal": "green"
- }
+ },
+ "hazards": [
+  {
+   "type": "nesting",
+   "level": "red",
+   "detail": "Tern colony nesting within 170 m"
+  },
+  {
+   "type": "raptors",
+   "level": "red",
+   "detail": "Hawk or eagle sightings within 1 km"
+  },
+  {
+   "type": "powerlines",
+   "level": "green",
+   "detail": "No power lines within 1 km"
+  },
+  {
+   "type": "crowd",
+   "level": "green",
+   "detail": "8 buildings within 300 m"
+  },
+  {
+   "type": "wind",
+   "level": "green",
+   "detail": "Wind 8 mph, gusts 12 mph at 120 ft"
+  },
+  {
+   "type": "rain",
+   "level": "green",
+   "detail": "No rain"
+  },
+  {
+   "type": "visibility",
+   "level": "green",
+   "detail": "Visibility 10 miles"
+  },
+  {
+   "type": "clouds",
+   "level": "green",
+   "detail": "Cloud base 3,200 ft"
+  },
+  {
+   "type": "air",
+   "level": "green",
+   "detail": "Air quality index 28"
+  }
+ ],
+ "bird_score": 98
 }

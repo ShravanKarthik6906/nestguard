@@ -4,11 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#0e1013" />
-    <title>NestGuard</title>
+    <title>NestGuard: Will your drone make it back?</title>
+    <meta name="description" content="Will your drone make it back? Wind, hawks, migrating birds and power lines, in one answer." />
   </head>
   <body>
     <header class="bar">
-      <div class="brand"><span class="wordmark">NestGuard</span><span class="sub">Pre-flight check</span></div>
+      <div class="brand"><span class="wordmark">NestGuard</span><span class="sub"><b>Will your drone make it back?</b> Wind, hawks, migrating birds and power lines, in one answer.</span></div>
       <label class="field">Date <input type="date" id="date" /></label>
       <span id="status" class="status"></span>
     </header>
@@ -50,6 +51,7 @@
 
         <div id="result" hidden>
           <p id="message" class="message"></p>
+          <ul id="hazards" class="hazards" hidden></ul>
           <dl class="facts">
             <div><dt>Risk</dt><dd><span id="score"></span> / 100</dd></div>
             <div id="bird-row" hidden><dt>Bird risk</dt><dd><span id="bird-score"></span> / 100</dd></div>
@@ -69,8 +71,10 @@
             <p id="why"></p>
           </div>
 
-          <h2 class="label">Reasons</h2>
-          <ul id="reasons" class="reasons"></ul>
+          <div id="reasons-block">
+            <h2 class="label">Reasons</h2>
+            <ul id="reasons" class="reasons"></ul>
+          </div>
         </div>
 
         <div id="device" class="block device offline">

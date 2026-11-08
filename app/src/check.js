@@ -1,3 +1,5 @@
+import { sortHazards, hazardRow } from './hazards.js'
+
 const $ = (id) => document.getElementById(id)
 const LABELS = { green: 'Go', yellow: 'Wait', red: "Don't fly" }
 const CHECKS = [['safety', 'Drone safety'], ['legal', 'FAA legal'], ['wildlife', 'Wildlife']]
@@ -36,7 +38,11 @@ export function showCheck(r) {
 
   $('raptor').hidden = !r.raptor_alert
   $('raptor-text').textContent = r.raptor_alert || ''
+  const hz = sortHazards(r.hazards)
+  $('hazards').replaceChildren(...hz.map(hazardRow))
+  $('hazards').hidden = hz.length === 0
   $('reasons').replaceChildren(...items(r.reasons || [], (li, t) => { li.textContent = t }))
+  $('reasons-block').hidden = hz.length > 0 || !(r.reasons || []).length // hazards replace the plain list
   $('result').hidden = false
 }
 
@@ -57,6 +63,8 @@ export function showCheckError(msg) {
   $('checks').replaceChildren()
   $('raptor').hidden = true
   $('reasons').replaceChildren()
+  $('hazards').replaceChildren()
+  $('hazards').hidden = true
   showWhy(null)
   $('result').hidden = false
 }

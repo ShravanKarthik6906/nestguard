@@ -1,16 +1,67 @@
 {
- "level": "green",
- "score": 12,
- "message": "Clear to fly",
- "reasons": [
-  "No recent bird activity within 2 km"
- ],
+ "reasons": [],
  "zones": [],
  "best_time": null,
  "raptor_alert": null,
  "checks": {
-  "wildlife": "green",
   "safety": "green",
-  "legal": "green"
- }
+  "legal": "green",
+  "wildlife": "green"
+ },
+ "level": "green",
+ "score": 12,
+ "bird_score": 12,
+ "message": "Clear to fly",
+ "hazards": [
+  {
+   "type": "nesting",
+   "level": "green",
+   "detail": "Outside nesting season"
+  },
+  {
+   "type": "raptors",
+   "level": "green",
+   "detail": "No hawks or eagles seen nearby"
+  },
+  {
+   "type": "powerlines",
+   "level": "green",
+   "detail": "No power lines within 1 km"
+  },
+  {
+   "type": "migration",
+   "level": "green",
+   "detail": "Outside migration season"
+  },
+  {
+   "type": "crowd",
+   "level": "green",
+   "detail": "12 buildings within 300 m"
+  },
+  {
+   "type": "wind",
+   "level": "green",
+   "detail": "Wind 8 mph, gusts 12 mph at 120 ft"
+  },
+  {
+   "type": "rain",
+   "level": "green",
+   "detail": "No rain"
+  },
+  {
+   "type": "visibility",
+   "level": "green",
+   "detail": "Visibility 10 miles"
+  },
+  {
+   "type": "clouds",
+   "level": "green",
+   "detail": "Cloud base 3,200 ft"
+  },
+  {
+   "type": "air",
+   "level": "green",
+   "detail": "Air quality index 28"
+  }
+ ]
 }

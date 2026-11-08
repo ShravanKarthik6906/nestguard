@@ -1,0 +1,70 @@
+{
+ "reasons": [
+  "Power line 80 m away",
+  "Hawk or eagle sightings within 1 km"
+ ],
+ "zones": [],
+ "best_time": null,
+ "raptor_alert": "Hawks or eagles seen within 1 km. They sometimes chase drones, so keep an eye on the sky and land if one comes close.",
+ "checks": {
+  "safety": "green",
+  "legal": "green",
+  "wildlife": "red"
+ },
+ "level": "red",
+ "score": 95,
+ "bird_score": 55,
+ "message": "Don't fly: power line too close",
+ "hazards": [
+  {
+   "type": "powerlines",
+   "level": "red",
+   "detail": "Power line 80 m away"
+  },
+  {
+   "type": "raptors",
+   "level": "red",
+   "detail": "Hawk or eagle sightings within 1 km"
+  },
+  {
+   "type": "migration",
+   "level": "yellow",
+   "detail": "Migration season: high bird activity"
+  },
+  {
+   "type": "crowd",
+   "level": "yellow",
+   "detail": "Dense area: people below (140 buildings within 300 m)"
+  },
+  {
+   "type": "nesting",
+   "level": "green",
+   "detail": "Outside nesting season"
+  },
+  {
+   "type": "wind",
+   "level": "green",
+   "detail": "Wind 8 mph, gusts 12 mph at 120 ft"
+  },
+  {
+   "type": "rain",
+   "level": "green",
+   "detail": "No rain"
+  },
+  {
+   "type": "visibility",
+   "level": "green",
+   "detail": "Visibility 10 miles"
+  },
+  {
+   "type": "clouds",
+   "level": "green",
+   "detail": "Cloud base 3,200 ft"
+  },
+  {
+   "type": "air",
+   "level": "green",
+   "detail": "Air quality index 28"
+  }
+ ]
+}

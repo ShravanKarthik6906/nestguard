@@ -13,5 +13,48 @@
   "wildlife": "yellow",
   "safety": "green",
   "legal": "green"
- }
+ },
+ "hazards": [
+  {
+   "type": "nesting",
+   "level": "yellow",
+   "detail": "Birds nearby, keep at least 100 m away"
+  },
+  {
+   "type": "raptors",
+   "level": "green",
+   "detail": "No hawks or eagles seen nearby"
+  },
+  {
+   "type": "powerlines",
+   "level": "green",
+   "detail": "No power lines within 1 km"
+  },
+  {
+   "type": "wind",
+   "level": "green",
+   "detail": "Wind 8 mph, gusts 12 mph at 120 ft"
+  },
+  {
+   "type": "rain",
+   "level": "green",
+   "detail": "No rain"
+  },
+  {
+   "type": "visibility",
+   "level": "green",
+   "detail": "Visibility 10 miles"
+  },
+  {
+   "type": "clouds",
+   "level": "green",
+   "detail": "Cloud base 3,200 ft"
+  },
+  {
+   "type": "air",
+   "level": "green",
+   "detail": "Air quality index 28"
+  }
+ ],
+ "bird_score": 55
 }

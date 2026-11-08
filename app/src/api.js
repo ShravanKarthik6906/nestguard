@@ -6,6 +6,8 @@ import mockRed from '../mock/check-red.json'
 import mockBolsa from '../mock/check-bolsa.json'
 import mockTelemetry from '../mock/telemetry.json'
 import mockPowerlines from '../mock/powerlines.json'
+import mockPower from '../mock/check-power.json'
+import mockMigration from '../mock/check-migration.json'
 
 // Every call returns { data, source } where source is 'live', 'cached' or 'mock'.
 
@@ -47,13 +49,32 @@ export async function getZones(lat, lon, radiusKm, date) {
   return getJSON(`/zones?lat=${r4(lat)}&lon=${r4(lon)}&radius_km=${Math.round(radiusKm)}&date=${date}`)
 }
 
-// Mock /check: same "inside a zone" rule as main.py's mock score.
+// Distance (m) from a point to the nearest mock power line segment (flat approximation, fine at this scale)
+function powerDistM(lat, lon) {
+  const k = Math.cos((lat * Math.PI) / 180), toXY = ([a, b]) => [(b - lon) * 111320 * k, (a - lat) * 110540]
+  let best = Infinity
+  for (const line of mockPowerlines) {
+    const pts = line.coords.map(toXY)
+    for (let i = 1; i < pts.length; i++) {
+      const [ax, ay] = pts[i - 1], [bx, by] = pts[i], dx = bx - ax, dy = by - ay
+      const t = Math.max(0, Math.min(1, -(ax * dx + ay * dy) / (dx * dx + dy * dy || 1)))
+      best = Math.min(best, Math.hypot(ax + t * dx, ay + t * dy))
+    }
+  }
+  return best
+}
+const migrationSeason = (date) => [3, 4, 5, 8, 9, 10, 11].includes(Number(date.slice(5, 7)))
+
+// Mock /check: power line within 100 m -> red; then the zone rule from main.py's mock score;
+// around RPI in migration season -> yellow.
 function mockCheck(lat, lon, date) {
   const zones = mockGetZones(lat, lon, 5, date)
   const d = (z) => distM(lat, lon, z.lat, z.lon)
   let r = mockGreen
-  if (zones.some((z) => z.level === 'red' && d(z) <= z.radius_m)) r = lat < 35 ? mockBolsa : mockRed
+  if (powerDistM(lat, lon) <= 100) r = mockPower
+  else if (zones.some((z) => z.level === 'red' && d(z) <= z.radius_m)) r = lat < 35 ? mockBolsa : mockRed
   else if (zones.some((z) => d(z) <= z.radius_m + 300)) r = mockYellow
+  else if (distM(lat, lon, 42.7302, -73.6788) <= 1500 && migrationSeason(date)) r = mockMigration
   return { ...r, zones }
 }
 
