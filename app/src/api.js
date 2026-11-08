@@ -48,9 +48,9 @@ function mockGetZones(lat, lon, radiusKm, date) {
   return mockZones.filter((z) => distM(lat, lon, z.lat, z.lon) <= radiusKm * 1000)
 }
 
-export async function getZones(lat, lon, radiusKm, date) {
+export async function getZones(lat, lon, radiusKm, date, timeoutMs = TIMEOUT_MS) {
   if (USE_MOCK) return { data: mockGetZones(lat, lon, radiusKm, date), source: 'mock' }
-  return getJSON(`/zones?lat=${r4(lat)}&lon=${r4(lon)}&radius_km=${Math.round(radiusKm)}&date=${date}`)
+  return getJSON(`/zones?lat=${r4(lat)}&lon=${r4(lon)}&radius_km=${Math.round(radiusKm)}&date=${date}`, timeoutMs)
 }
 
 // Distance (m) from a point to the nearest mock power line segment (flat approximation, fine at this scale)
@@ -82,9 +82,11 @@ function mockCheck(lat, lon, date) {
   return { ...r, zones }
 }
 
-export async function check(lat, lon, date) {
+// timeoutMs is optional: the pre-flight tool waits longer, because the first check in a new area
+// fetches birds, weather and power lines live and can take 10-20 seconds.
+export async function check(lat, lon, date, timeoutMs = TIMEOUT_MS) {
   if (USE_MOCK) return { data: mockCheck(lat, lon, date), source: 'mock' }
-  return getJSON(`/check?lat=${r4(lat)}&lon=${r4(lon)}&date=${date}`)
+  return getJSON(`/check?lat=${r4(lat)}&lon=${r4(lon)}&date=${date}`, timeoutMs)
 }
 
 // Tell the device where to "be". {} stops demo mode. Not cached; skipped in mock mode.

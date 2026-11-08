@@ -148,6 +148,7 @@ $('pick-map').addEventListener('click', () => {
 $('go').addEventListener('click', runFromSetup)
 function runFromSetup() {
   if (!picked) return
+  scenarioKey = null
   state.spot = { ...picked }
   runCheck({ speak: true, why: true })
   go('results')
@@ -163,7 +164,7 @@ async function runCheck({ speak = true, why = speak } = {}) {
   renderLoading()
   if (state.view !== 'explore') map.setView([lat, lon], 14)
   try {
-    const { data, source, savedAt } = await check(lat, lon, $('date').value)
+    const { data, source, savedAt } = await check(lat, lon, $('date').value, 30000)
     if (id !== checkId) return
     Object.assign(state, { result: data, source, savedAt })
     renderResult(data)
@@ -190,6 +191,7 @@ async function loadWhy(id) {
 }
 
 // ---------- 2. the assessment
+let slowTimer
 const CONCERN = { red: 'High concern', yellow: 'Moderate concern', green: 'Low concern', none: 'Score unavailable' }
 function renderLoading() {
   $('res-h').textContent = `${state.spot.name || 'Selected spot'} · ${fmtDate($('date').value)}`
@@ -197,6 +199,9 @@ function renderLoading() {
   $('r-concern').textContent = 'Checking'
   $('r-score').textContent = '--'; $('r-meter').style.width = '0'
   $('r-summary').textContent = 'Checking weather, birds, power lines and more…'
+  clearTimeout(slowTimer)
+  slowTimer = setTimeout(() => { if ($('r-assess').classList.contains('loading')) $('r-summary').textContent = 'Still checking. The first check in a new area can take up to 20 seconds while NestGuard gathers bird and power-line data.' }, 4000)
+  renderContext()
   $('r-error').hidden = true; $('r-saved').hidden = true
 }
 
@@ -268,7 +273,8 @@ function renderError(err) {
   $('r-summary').textContent = ''
   $('r-hazards').replaceChildren(); $('r-facts').innerHTML = ''; $('r-complete').textContent = ''; $('r-why').hidden = true
   $('r-error').hidden = false
-  $('r-error').innerHTML = `Could not get an assessment for this spot (${esc(err.message)}). ` +
+  const timedOut = err.name === 'TimeoutError' || err.name === 'AbortError' || /abort/i.test(err.message)
+  $('r-error').innerHTML = (timedOut ? 'The check took too long. ' : `Could not get an assessment for this spot (${esc(err.message)}). `) +
     (navigator.onLine ? 'The service may be busy; try again in a moment.' : 'You are offline, and there is no saved copy for this spot and date.') +
     ' <button class="btn" type="button" id="retry">Try again</button> <button class="btn ghost" type="button" data-go="offline">Offline and backup</button>'
   $('retry').addEventListener('click', () => runCheck({ speak: true, why: true }))
@@ -281,7 +287,7 @@ async function loadZones() {
   const c = map.getCenter()
   const radiusKm = Math.min(50, Math.max(5, c.distanceTo(map.getBounds().getNorthEast()) / 1000))
   try {
-    const { data } = await getZones(c.lat, c.lng, radiusKm, $('date').value)
+    const { data } = await getZones(c.lat, c.lng, radiusKm, $('date').value, 20000)
     drawZones(zonesOn ? data : [])
   } catch {}
 }
@@ -380,6 +386,7 @@ map.on('click', async (e) => {
     return
   }
   if (state.view !== 'explore' || state.demo) return
+  scenarioKey = null
   state.spot = { lat, lon, name: `${lat.toFixed(4)}, ${lon.toFixed(4)}` }
   runCheck({ speak: true, why: true })
   state.spot.name = await placeName(lat, lon)
@@ -391,6 +398,7 @@ const pts = PATH_POINTS()
 $('demo-dots').innerHTML = pts.map(() => '<i></i>').join('')
 let demoFirst = null
 function startWalk() {
+  scenarioKey = null
   $('date').value = today()
   state.demo = true; demoFirst = null
   state.spot = { ...pts[0], name: 'Demo route, Troy' }
@@ -441,6 +449,19 @@ $('demo-next').addEventListener('click', () => { stepDemo(1); $('demo-play').tex
 $('demo-exit').addEventListener('click', async () => { await endWalk(); go('results') })
 setInterval(() => { if (state.demo) $('demo-device').textContent = `Controller device: ${$('device-state').textContent.toLowerCase()}. It follows each step within about 5 seconds.` }, 2000)
 
+// ---------- why a sample place was picked (shown on its assessment)
+const CONTEXT = {
+  bolsa: 'Why this place? On May 13, 2021, a drone crashed into a nesting colony of terns at Bolsa Chica, California, and about 1,500 eggs were abandoned. This replays the check for that day, to show what NestGuard would have said before that flight.',
+  power: 'Why this place? It is about 40 m from a mapped power line in Troy, New York, to show how NestGuard flags wires near your spot.',
+  'rpi-may': 'Why this date? May is nesting season, so the same campus spot shows how bird activity changes the assessment.',
+}
+let scenarioKey = null
+function renderContext() {
+  const t = scenarioKey && CONTEXT[scenarioKey]
+  $('r-context').hidden = !t
+  $('r-context').textContent = t || ''
+}
+
 // ---------- scenarios (advanced options and ?scenario= links)
 const PRESETS = {
   'rpi-today': { lat: 42.7302, lon: -73.6788, date: today, name: 'RPI campus, Troy' },
@@ -451,6 +472,7 @@ const PRESETS = {
 async function runPreset(key) {
   const p = PRESETS[key]; if (!p) return
   if (state.demo) await endWalk()
+  scenarioKey = key
   $('date').value = p.date()
   choose({ lat: p.lat, lon: p.lon, name: p.name })
   state.spot = { lat: p.lat, lon: p.lon, name: p.name }
