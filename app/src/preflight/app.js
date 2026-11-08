@@ -193,7 +193,7 @@ async function loadWhy(id) {
 
 // ---------- 2. the assessment
 let slowTimer
-const CONCERN = { red: 'High concern', yellow: 'Moderate concern', green: 'Low concern', none: 'Score unavailable' }
+const CONCERN = { red: 'High risk', yellow: 'Medium risk', green: 'Low risk', none: 'Score unavailable' }
 function renderLoading() {
   $('res-h').textContent = `${state.spot.name || 'Selected spot'} · ${fmtDate($('date').value)}`
   $('r-assess').className = 'assess loading'
@@ -276,12 +276,12 @@ function renderSafer(r, hz) {
 }
 // Why there is no lower-risk spot, in plain words (shared by the assessment and the explore panel).
 function saferNone(r, hz) {
-  if (r.bird_score == null) return 'Cannot compare nearby spots: there is no bird data for this area.'
-  if (band(r.score).cls === 'green') return 'This spot is already low risk.'
-  const wide = hz.filter((h) => AREA_WIDE.includes(h.type) && (h.level === 'red' || h.level === 'yellow'))
-  const worstWide = wide.some((h) => h.level === band(r.score).cls)
-  return 'Nothing within 3 km scores lower.' +
-    (wide.length ? ` The main concern (${wide.map((h) => titleOf(h.type).toLowerCase()).join(', ')}) covers the whole area${worstWide ? ', so moving will not help' : ''}.` : ' This is about as good as it gets nearby.') +
+  if (r.bird_score == null) return 'No bird data here to compare.'
+  if (band(r.score).cls === 'green') return 'Already low risk here.'
+  // only blame an area-wide hazard (weather, migration, air) when it is what sets the score
+  const worst = hz.filter((h) => AREA_WIDE.includes(h.type) && h.level === band(r.score).cls)
+  return 'Nothing lower within 3 km.' +
+    (worst.length ? ` ${titleOf(worst[0].type)} affects the whole area.` : '') +
     (r.best_time ? ' ' + bestTimeSentence(r.best_time) : '')
 }
 function bestTimeSentence(t) {
@@ -414,7 +414,7 @@ function renderSpotSummary() {
   const r = state.result
   if (!state.spot) return
   const bd = band(r && r.score)
-  $('exp-spot').innerHTML = r ? `Your spot: <b>${esc(state.spot.name || 'selected spot')}</b>` : ''
+  $('exp-spot').textContent = r && !state.demo ? (state.spot.name || '') : ''
   const sc = $('exp-score')
   sc.hidden = !r
   if (r) {
@@ -430,12 +430,12 @@ function renderSpotSummary() {
   if (!r) return
   if (sp && Number.isFinite(sp.lat)) {
     box.className = 'safer-card'
-    box.innerHTML = `<span class="safer-k">Lower-risk spot nearby</span><p class="safer-main"><span class="safer-num mono">${esc(sp.score)}</span><span class="of mono">/100</span>` +
+    box.innerHTML = `<span class="safer-k">Lower risk nearby</span><p class="safer-main"><span class="safer-num mono">${esc(sp.score)}</span><span class="of mono">/100</span>` +
       `<span class="safer-where">${esc(sp.distance_km)} km ${esc(sp.direction)}</span></p><button class="btn primary" type="button">Check this spot</button>`
     box.querySelector('button').addEventListener('click', () => goToSafer(sp))
   } else {
     box.className = 'safer-card none'
-    box.innerHTML = `<span class="safer-k">Lower-risk spot nearby</span><p class="safer-n">${esc(saferNone(r, r.hazards || []))}</p>`
+    box.innerHTML = `<span class="safer-k">Lower risk nearby</span><p class="safer-n">${esc(saferNone(r, r.hazards || []))}</p>`
   }
 }
 
@@ -461,6 +461,7 @@ map.on('click', async (e) => {
 const pts = PATH_POINTS()
 $('demo-dots').innerHTML = pts.map(() => '<i></i>').join('')
 let demoFirst = null
+let lastDemoCheck = Promise.resolve()
 function startWalk() {
   scenarioKey = null
   $('date').value = today()
@@ -475,25 +476,24 @@ function startWalk() {
 }
 function onDemoPoint(p, i, n) {
   state.spot = { lat: p.lat, lon: p.lon, name: `Demo route, step ${i + 1} of ${n}` }
-  $('demo-step').textContent = `Step ${i + 1} of ${n}`
+  $('demo-step').textContent = `Stop ${i + 1} of ${n}`
   $('demo-dots').querySelectorAll('i').forEach((d, k) => { d.className = k < i ? 'done' : k === i ? 'now' : '' })
   drawRoute(pts, i)
-  $('demo-now').innerHTML = '<p class="muted">Checking this spot…</p>'
+  $('demo-now').innerHTML = ''
   $('demo-prev').disabled = i === 0; $('demo-next').disabled = i === n - 1
-  runCheck({ speak: i === 0, why: false }).then(() => {
+  lastDemoCheck = runCheck({ speak: i === 0, why: false }).then(() => {
     const r = state.result; if (!r) return
     if (i === 0) demoFirst = r.score
-    const bd = band(r.score), top = sortHazards(r.hazards).find((h) => h.level !== 'green' && h.level !== 'unknown')
-    $('demo-now').innerHTML = `<div class="ds"><span class="mono">${Math.round(r.score)}</span><span class="muted">/100 · ${esc(CONCERN[bd.cls].toLowerCase())}</span></div>` +
-      `<p>${esc(top ? `${titleOf(top.type)}: ${top.detail}` : mainDriver(r.message))}</p>`
+    // the score card above already shows this stop's score and reason
   })
 }
-function onDemoEnd() {
+async function onDemoEnd() {
   $('demo-play').textContent = 'Play'
+  try { await lastDemoCheck } catch {}           // wait for the last stop's check, not the one before it
   const r = state.result
   $('demo-end').hidden = false
-  $('demo-end').innerHTML = `<h3>Walkthrough complete</h3><p>From RPI campus${demoFirst !== null ? ` (risk ${Math.round(demoFirst)})` : ''} to the end of the route${r ? ` (risk ${Math.round(r.score)})` : ''}. The device stays on this last step until you end the demo.</p>` +
-    '<div class="row"><button class="btn" type="button" id="demo-replay">Replay</button><button class="btn" type="button" data-go="results">See the full assessment</button></div>'
+  $('demo-end').innerHTML = `<p>Done.${demoFirst !== null && r ? ` Risk ${Math.round(demoFirst)} at RPI, ${Math.round(r.score)} at the power line.` : ''}</p>` +
+    '<div class="row"><button class="btn" type="button" id="demo-replay">Replay</button><button class="btn" type="button" data-go="results">Full assessment</button></div>'
   $('demo-replay').addEventListener('click', startWalk)
 }
 async function endWalk() {
@@ -511,7 +511,7 @@ $('demo-play').addEventListener('click', () => {
 $('demo-prev').addEventListener('click', () => { stepDemo(-1); $('demo-play').textContent = 'Play'; $('demo-end').hidden = true })
 $('demo-next').addEventListener('click', () => { stepDemo(1); $('demo-play').textContent = 'Play' })
 $('demo-exit').addEventListener('click', async () => { await endWalk(); go('results') })
-setInterval(() => { if (state.demo) $('demo-device').textContent = `Controller device: ${$('device-state').textContent.toLowerCase()}. It follows each step within about 5 seconds.` }, 2000)
+setInterval(() => { if (state.demo) $('demo-device').textContent = `Device: ${$('device-state').textContent.toLowerCase()}` }, 2000)
 
 // ---------- why a sample place was picked (shown on its assessment)
 const CONTEXT = {

@@ -91,7 +91,7 @@ export function setPinRisk(cls) {
   pin.setStyle({ fillColor: fill, color: '#0e1013', radius: 9 })
 }
 
-// Demo walk: numbered stops (visited ones in teal), no connecting line.
+// Demo walk: numbered stops (visited ones in off-white), no connecting line.
 export function drawRoute(points, upTo = -1) {
   routeLayer.clearLayers()
   if (!points || points.length < 2) return
@@ -109,7 +109,7 @@ export const getMap = () => map
 // Lower-risk spot suggested by the API: a green ring the pilot can tap.
 let saferMarker
 const DIR_SHORT = { north: 'N', northeast: 'NE', east: 'E', southeast: 'SE', south: 'S', southwest: 'SW', west: 'W', northwest: 'NW' }
-// The lower-risk spot: a labelled teal flag ("LOWER RISK 47 · 1 km NE"). Teal is the app's action colour,
+// The lower-risk spot: a labelled off-white flag ("LOWER RISK 47 · 1 km NE"). Off-white is the app's action colour,
 // never a risk colour, so it can't be mistaken for your spot or a bird zone. A dotted guide links the two.
 export function setSaferSpot(spot, onClick) {
   if (saferMarker) { saferMarker.remove(); saferMarker = null }
@@ -121,7 +121,7 @@ export function setSaferSpot(spot, onClick) {
       html: `<span class="safer-flag"><span class="safer-flag-l">Lower risk <b>${spot.score}</b>${dist}</span><i></i></span>` }),
   }).on('click', () => onClick && onClick())
   const layers = [flag]
-  if (pin) layers.unshift(L.polyline([pin.getLatLng(), [spot.lat, spot.lon]], { color: '#2bb3a0', weight: 2.5, opacity: 0.85, dashArray: '2 7', interactive: false }))
+  if (pin) layers.unshift(L.polyline([pin.getLatLng(), [spot.lat, spot.lon]], { color: '#e8ebef', weight: 2.5, opacity: 0.85, dashArray: '2 7', interactive: false }))
   saferMarker = L.layerGroup(layers).addTo(map)
 }
 

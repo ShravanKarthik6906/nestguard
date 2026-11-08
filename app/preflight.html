@@ -124,14 +124,14 @@
           <div id="slot-explore" class="slot explore-map"></div>
           <aside class="side">
             <button class="back" data-go="results" type="button">Back to the assessment</button>
-            <h1 id="exp-h" class="side-h" tabindex="-1">Explore the area</h1>
+            <h1 id="exp-h" class="side-h" tabindex="-1">Explore</h1>
             <p id="exp-spot" class="muted"></p>
             <div id="exp-score" class="exp-score" hidden></div>
             <div id="exp-safer" class="safer-card" hidden></div>
 
             <div id="demo-panel" class="demo" hidden>
-              <span class="badge">Demo walkthrough</span>
-              <p class="demo-t">A pretend walk from RPI campus to a spot next to a power line in Troy. The numbered dots on the map are the stops. Every stop is a real check with today's data, and the controller device follows along.</p>
+              <span class="badge">Demo route</span>
+              <p class="demo-t">RPI campus to a power line in Troy. Live data at every stop.</p>
               <div class="progress"><span id="demo-step" class="mono">Step 1 of 10</span><div id="demo-dots" class="dots" aria-hidden="true"></div></div>
               <div id="demo-now" class="demo-now"></div>
               <div class="demo-ctl">
@@ -146,7 +146,7 @@
 
             <div class="layers">
               <p class="side-l">Layers</p>
-              <label class="tog"><input type="checkbox" id="lay-zones" checked /> Bird activity areas</label>
+              <label class="tog"><input type="checkbox" id="lay-zones" checked /> Bird activity</label>
               <label class="tog"><input type="checkbox" id="power-toggle" checked /> Power lines</label>
               <span id="power-note" class="muted small"></span>
             </div>
@@ -157,13 +157,12 @@
               <p><i class="lg zone mid"></i>Moderate bird activity</p>
               <p><i class="lg zone low"></i>Low bird activity</p>
               <p><i class="lg line"></i>Mapped power line</p>
-              <p><i class="lg pin"></i>Your spot, coloured by overall risk</p>
-              <p><i class="lg safer"></i>Lower-risk spot nearby (tap it to check)</p>
-              <p class="muted small">Colored areas indicate locations with reported bird activity. These are approximate areas of environmental concern, not flight restrictions. Tap one to learn more.</p>
+              <p><i class="lg pin"></i>Your spot</p>
+              <p><i class="lg safer"></i>Lower-risk spot</p>
             </div>
 
             <div id="feat" class="feat" aria-live="polite">
-              <p class="muted small">Tap a colored area or a power line on the map to see what it means. Tap anywhere else to check that spot.</p>
+              <p class="muted small">Tap the map to check another spot.</p>
             </div>
           </aside>
         </div>
