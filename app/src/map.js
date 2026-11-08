@@ -28,6 +28,9 @@ function addBaseMap() {
 export function createMap(el, center) {
   map = L.map(el).setView([center.lat, center.lon], 14)
   addBaseMap()
+  // Re-measure whenever the map's box changes size (fonts loading, header wrapping, phone rotation),
+  // otherwise Leaflet only draws tiles for the size it saw first and leaves the rest blank.
+  new ResizeObserver(() => map.invalidateSize()).observe(el)
   zoneLayer = L.layerGroup().addTo(map)
   powerLayer = L.layerGroup().addTo(map)
   return map
