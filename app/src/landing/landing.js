@@ -36,11 +36,58 @@ getStats().then((rows) => {
   if (total) $('live-stats').textContent = `${total} pre-flight checks were run in the last 24 hours, and ${red} of them said Don't fly. Counted with Tiger Data.`
 }).catch(() => {})
 
-// ---- sections rise in as you scroll to them
-const reveal = new IntersectionObserver((entries) => {
-  for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); reveal.unobserve(e.target) }
-}, { threshold: 0.15 })
-document.querySelectorAll('.info section').forEach((s) => { s.classList.add('reveal'); reveal.observe(s) })
+// ---- letters fly in for each heading and paragraph as it scrolls into view
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches
+const rnd = (a) => (Math.random() * 2 - 1) * a
+
+// Wrap every letter in a span (words kept together so lines never break mid-word).
+// Links and bold text stay intact; live values that load later are left alone.
+function splitLetters(el) {
+  let count = 0
+  const walk = (node) => {
+    for (const child of [...node.childNodes]) {
+      if (child.nodeType === 3) {
+        const frag = document.createDocumentFragment()
+        for (const part of child.textContent.split(/(\s+)/)) {
+          if (!part) continue
+          if (/^\s+$/.test(part)) { frag.append(document.createTextNode(part)); continue }
+          const word = document.createElement('span')
+          word.className = 'w'
+          for (const ch of part) {
+            const c = document.createElement('span')
+            c.className = 'ch'
+            c.textContent = ch
+            c.style.cssText = `--dx:${rnd(60).toFixed(0)}px;--dy:${(rnd(40) + 30).toFixed(0)}px;--r:${rnd(70).toFixed(0)}deg;--i:${count++}`
+            word.append(c)
+          }
+          frag.append(word)
+        }
+        child.replaceWith(frag)
+      } else if (child.nodeType === 1 && !child.id?.startsWith('live-')) walk(child)
+    }
+  }
+  walk(el)
+  return count
+}
+
+const blocks = [...document.querySelectorAll('.info h2, .info section > p, .info .label')]
+if (!reduceMotion) {
+  for (const b of blocks) {
+    const n = splitLetters(b)
+    b.classList.add('fly')
+    b.style.setProperty('--step', `${Math.min(8, 650 / Math.max(1, n)).toFixed(2)}ms`) // whole block in well under a second
+  }
+}
+const seen = new IntersectionObserver((entries) => {
+  for (const e of entries) {
+    if (!e.isIntersecting) continue
+    // headings start first, then each paragraph of the section in turn
+    ;[...e.target.querySelectorAll('.fly')].forEach((b, i) => setTimeout(() => b.classList.add('in'), i * 140))
+    e.target.classList.add('in')
+    seen.unobserve(e.target)
+  }
+}, { threshold: 0.12 })
+document.querySelectorAll('.info section').forEach((s) => { s.classList.add('reveal'); seen.observe(s) })
 
 // ---- below the hero, the mouse cursor becomes a spinning propeller (mouse and trackpad only)
 const hero = document.getElementById('hero')
