@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Run on the Vultr server as root, from /srv/nestguard:   bash deploy/setup.sh nestguard.xyz
+# (the domain only needs to be given once; it also serves www.nestguard.xyz)
 # Safe to run again: it is also the "update" command after a git pull.
 # With no domain yet, run it without arguments: it uses <ip>.sslip.io, which also gets https.
 set -euo pipefail
@@ -7,7 +8,16 @@ cd /srv/nestguard
 
 IP=$(curl -4 -s https://api.ipify.org)
 NAMES="${IP//./-}.sslip.io"
-[ $# -gt 0 ] && NAMES="$1, $NAMES"
+# The domain is remembered after the first time, so the everyday update command
+# (bash deploy/setup.sh, no arguments) keeps it. Give a new one to replace it.
+DOMAIN_FILE=/etc/nestguard-domain
+if [ $# -gt 0 ]; then
+  echo "$1" > "$DOMAIN_FILE"
+fi
+if [ -s "$DOMAIN_FILE" ]; then
+  DOMAIN=$(cat "$DOMAIN_FILE")
+  NAMES="$DOMAIN, www.$DOMAIN, $NAMES"
+fi
 echo "Site names: $NAMES"
 
 echo "== packages"
