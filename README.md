@@ -1,33 +1,56 @@
-# nestguard
-## API (backend, FastAPI)
+# HashHouse
 
-Live docs: http://129.161.92.50:8000/docs (Udaya's laptop for now, Vultr later)
+My team and I built HashHouse at a hackathon in July 2026. It's a vault for AI models that tells you if a model has been changed when it shouldn't have been.
 
-All responses are JSON. Zones are blurred to a ~1 km grid: never exact nest locations.
+![HashHouse dashboard](docs/screenshot.png)
 
-| Endpoint | Purpose |
-|---|---|
-| `GET /zones?lat=&lon=&radius_km=5` | Zones near a point (for the map) |
-| `GET /check?lat=&lon=&date=YYYY-MM-DD` | Pre-flight check, returns the handoff message |
-| `GET /device/demo` | Device polls this; `{}` means demo is off |
-| `POST /device/demo` | App sets a fake location `{"lat":..,"lon":..}`, or `{}` to stop |
-| `POST /device/telemetry` | Device sends `{"temp_c":..,"light_pct":..,"ts":..}` every 10 s |
-| `GET /device/telemetry` | App reads the latest device readings |
+## The idea
 
-### Handoff message (`/check` response)
-```json
-{"level": "red", "score": 82, "message": "Nesting zone, climb to 300 ft",
- "reasons": ["Hawk sightings within 1 km", "Nesting season", "40F and rain"],
- "zones": [{"lat": 42.735, "lon": -73.675, "radius_m": 200, "level": "red"}],
- "best_time": "Tomorrow 10 AM to 1 PM"}
+AI models get passed around a lot between training, testing, and deployment. If someone swaps or edits a model file along the way, it's really hard to notice. We wanted a simple way to catch that.
+
+## What it does
+
+When you upload a model, HashHouse takes a SHA-256 fingerprint of it. Change even one byte and the fingerprint changes, so any edit shows up.
+
+Every upload is saved as a new version. Old versions can't be edited or deleted, so you always have the full history.
+
+You need a password and a one-time code from an authenticator app to get in.
+
+There's also a dashboard that checks every model against its saved fingerprint and flags anything that doesn't match.
+
+## How we built it
+
+- Frontend: React
+- Backend: FastAPI (Python)
+- Database: SQLite
+- Login: JSON Web Tokens and time-based one-time codes
+
+## Team
+
+<!-- add names and GitHub links -->
+- Udaya Raja ([@U-daya](https://github.com/U-daya)): what you worked on
+- Teammate ([@handle](https://github.com/handle)): what they worked on
+
+## Running it yourself
+
+<!-- check these against the repo -->
+
+Backend:
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload
 ```
-- `level`: `green` (Go), `yellow` (Wait), `red` (Don't fly)
-- `score`: 0 to 100
-- `best_time`: null until it's built
 
-### Zone object (`/zones` returns a list of these)
-```json
-{"lat": 42.735, "lon": -73.675, "radius_m": 200, "level": "red"}
+Frontend:
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
-Responses are mock data until the real score is done (~7 PM). The shapes won't change.
+## What we want to add next
+
+- Signatures so you can see who uploaded each version
+- Email or Slack alerts when a model fails a check
+- Cloud storage support
