@@ -20,7 +20,7 @@ id nestguard >/dev/null 2>&1 || useradd --system --home /srv/nestguard --shell /
 echo "== backend"
 [ -f backend/.env ] || { echo "backend/.env is missing: scp it from your laptop first"; exit 1; }
 python3 -m venv backend/.venv
-backend/.venv/bin/pip install -q fastapi uvicorn pymongo python-dotenv requests
+backend/.venv/bin/pip install -q -r backend/requirements.txt
 chown -R nestguard:nestguard backend
 chmod 600 backend/.env
 cp deploy/nestguard-api.service /etc/systemd/system/

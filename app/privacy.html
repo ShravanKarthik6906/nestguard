@@ -13,10 +13,10 @@
       <p class="muted">Last updated November 7, 2026. NestGuard is a student project built at HackRPI 2026.</p>
 
       <h2>What we do not collect</h2>
-      <p>No accounts, no cookies, no analytics and no advertising. We do not store the places or dates you check.</p>
+      <p>No accounts, no cookies, no analytics and no advertising. We never store your exact position.</p>
 
       <h2>What happens when you run a check</h2>
-      <p>The point you pick and the date are sent to our server to calculate the result. The server looks up weather for that point from Open-Meteo, and compares it with bird records. The request is not saved.</p>
+      <p>The point you pick and the date are sent to our server to calculate the result. The server looks up weather for that point from Open-Meteo, and compares it with bird records. For anonymous statistics, such as how many pilots were warned today, we save the time, the result, and the point rounded to a grid cell of about 1 km. Nothing links it to you.</p>
       <p>When the page shows a written explanation, the result (the verdict, risk score and reasons, but not your coordinates) is sent to Google Gemini to write one sentence.</p>
       <p>Spoken alerts send the alert sentence to Fish Audio to turn it into speech. Sentences are cached on our server so the same sentence is not sent twice.</p>
 
@@ -24,7 +24,7 @@
       <p>Your browser keeps a copy of recent results so the app keeps working on a slow connection. You can clear it by clearing this site's data in your browser.</p>
 
       <h2>The controller device</h2>
-      <p>The NestGuard device sends its temperature and light readings to our server every 10 seconds. Only the latest reading is kept, in memory, and it is gone when the server restarts.</p>
+      <p>The NestGuard device sends its temperature and light readings to our server every 10 seconds. The readings are kept in a database (Tiger Data) so the app can show a recent history. They contain no location.</p>
 
       <h2>Protecting birds</h2>
       <p>Exact nest and sighting locations never leave our server. The map only shows zones blurred to a grid of about 1 km, so the app cannot be used to find nests.</p>
