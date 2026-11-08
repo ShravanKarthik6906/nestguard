@@ -45,7 +45,7 @@ export async function searchPlaces(query, signal, near) {
   const q = query.trim()
   if (q.length < 3) return []
   // each source gets its own time limit, so one slow service never holds up the other
-  const lim = () => AbortSignal.any([signal, AbortSignal.timeout(6000)].filter(Boolean))
+  const lim = () => (AbortSignal.any && signal) ? AbortSignal.any([signal, AbortSignal.timeout(6000)]) : signal
   const [a, b] = await Promise.allSettled([photon(q, near, lim()), mapbox(q, near, lim())])
   if (a.status === 'rejected' && b.status === 'rejected') throw a.reason
   // interleave, named places (Photon) first, and drop near-duplicates
