@@ -79,39 +79,41 @@
       <!-- 2. Assessment -->
       <section id="v-results" class="view" data-view="results" aria-labelledby="res-h" hidden>
         <div class="results">
-          <button class="back" data-go="setup" type="button">Change location or date</button>
-          <p class="eyebrow">Your flight assessment</p>
-          <h1 id="res-h" class="where" tabindex="-1"></h1>
-          <p id="r-context" class="context" hidden></p>
-          <div id="r-saved" class="notice" role="status" hidden></div>
-          <div id="r-error" class="notice error" role="alert" hidden></div>
+          <div class="col col-a">
+            <button class="back" data-go="setup" type="button">Change location or date</button>
+            <p class="eyebrow">Your flight assessment</p>
+            <h1 id="res-h" class="where" tabindex="-1"></h1>
+            <p id="r-context" class="context" hidden></p>
+            <div id="r-saved" class="notice" role="status" hidden></div>
+            <div id="r-error" class="notice error" role="alert" hidden></div>
 
-          <div id="r-assess" class="assess loading" aria-live="polite">
-            <span id="r-concern" class="concern">Checking</span>
-            <div class="score"><span id="r-score" class="num mono">--</span><span class="of mono">/100</span><span class="score-l">Environmental risk</span></div>
-            <div class="meter" aria-hidden="true"><i id="r-meter"></i></div>
-            <p id="r-summary" class="summary"></p>
+            <div id="r-assess" class="assess loading" aria-live="polite">
+              <span id="r-concern" class="concern">Checking</span>
+              <div class="score"><span id="r-score" class="num mono">--</span><span class="of mono">/100</span><span class="score-l">Environmental risk</span></div>
+              <div class="meter" aria-hidden="true"><i id="r-meter"></i></div>
+              <p id="r-summary" class="summary"></p>
+            </div>
+            <div id="r-complete" class="complete"></div>
+            <div id="r-safer" class="safer"></div>
+            <dl id="r-facts" class="facts"></dl>
+            <div id="r-why" class="why" hidden><span class="why-l">In one sentence</span><p id="r-why-t"></p></div>
           </div>
 
-          <div id="r-complete" class="complete"></div>
+          <div class="col col-b">
+            <h2 class="sec-h">What should you know?</h2>
+            <ul id="r-hazards" class="haz"></ul>
+          </div>
 
-          <h2 class="sec-h">What should you know?</h2>
-          <ul id="r-hazards" class="haz"></ul>
-
-          <dl id="r-facts" class="facts"></dl>
-          <div id="r-why" class="why" hidden><span class="why-l">In one sentence</span><p id="r-why-t"></p></div>
-
-          <div class="preview">
-            <div class="preview-head"><h2 class="sec-h">Map</h2><span class="muted">Bird activity and power lines around your spot</span></div>
+          <div class="col col-c">
+            <div class="preview-head"><h2 class="sec-h">Map</h2><span class="muted small">Bird activity and power lines around your spot</span></div>
             <div id="slot-preview" class="slot preview-map"></div>
             <button class="btn primary" type="button" data-go="explore">Explore the map and details</button>
-          </div>
-
-          <div id="device" class="device offline">
-            <span class="device-l">Controller device</span>
-            <span id="device-state">Offline</span>
-            <span class="muted">Temperature <b id="device-temp">Not available</b></span>
-            <span class="muted">Light <b id="device-light">Not available</b></span>
+            <div id="device" class="device offline">
+              <span class="device-l">Controller device</span>
+              <span id="device-state">Offline</span>
+              <span class="muted">Temperature <b id="device-temp">Not available</b></span>
+              <span class="muted">Light <b id="device-light">Not available</b></span>
+            </div>
           </div>
         </div>
       </section>
@@ -127,7 +129,7 @@
 
             <div id="demo-panel" class="demo" hidden>
               <span class="badge">Demo walkthrough</span>
-              <p class="demo-t">A pretend walk from RPI campus to a spot next to a power line in Troy. Every step is a real check with today's data, and the controller device follows along.</p>
+              <p class="demo-t">A pretend walk from RPI campus to a spot next to a power line in Troy. The numbered dots on the map are the stops. Every stop is a real check with today's data, and the controller device follows along.</p>
               <div class="progress"><span id="demo-step" class="mono">Step 1 of 10</span><div id="demo-dots" class="dots" aria-hidden="true"></div></div>
               <div id="demo-now" class="demo-now"></div>
               <div class="demo-ctl">

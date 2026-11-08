@@ -7,13 +7,13 @@ import '@fontsource/b612-mono/700.css'
 import './pf.css'
 import { RPI, USE_MOCK } from '../config.js'
 import { getZones, check, explain, getPowerlines, distM } from '../api.js'
-import { createMap, drawZones, setPin, setPinRisk, drawPowerlines, showPowerlines, onFeatureClick, drawRoute, clearRoute, getMap } from '../map.js'
+import { createMap, drawZones, setPin, setPinRisk, drawPowerlines, showPowerlines, onFeatureClick, drawRoute, clearRoute, getMap, setSaferSpot } from '../map.js'
 import { band, mainDriver } from '../risk.js'
 import { startDemo, stopDemo, pauseDemo, resumeDemo, stepDemo, isRunning, demoDate, PATH_POINTS } from '../demo.js'
 import { announce } from '../speech.js'
 import { startTelemetry } from '../telemetry.js'
 import { icon, INFO, titleOf, SEVERITY, sortHazards, completeness } from './hazinfo.js'
-import { searchPlaces, placeName, parseCoords, canSearch } from './geocode.js'
+import { searchPlaces, placeName, parseCoords } from './geocode.js'
 import { status as offStatus, ago } from './offline.js'
 
 const $ = (id) => document.getElementById(id)
@@ -51,6 +51,7 @@ function go(view, { push = true } = {}) {
     else if (state.spot && !state.pick && (view === 'explore' || view === 'results')) map.setView([state.spot.lat, state.spot.lon], Math.max(map.getZoom(), 14))
   }, 80)
   document.body.classList.toggle('explore-mode', view === 'explore')
+  document.body.classList.toggle('results-mode', view === 'results')
   document.querySelectorAll('.step').forEach((b) => {
     b.toggleAttribute('aria-current', b.dataset.go === view)
     if (b.dataset.go === view) b.setAttribute('aria-current', 'step')
@@ -100,11 +101,11 @@ $('q').addEventListener('input', () => {
   choose(null); $('go').disabled = true
   const c = parseCoords(text)
   if (c) return renderSuggest([c])
-  if (!canSearch()) return renderSuggest([], text.trim() ? 'Type coordinates like 42.73, -73.68, or use your location or the map' : '')
   if (text.trim().length < 3) return renderSuggest([])
   searchTimer = setTimeout(async () => {
     searchCtl?.abort(); searchCtl = new AbortController()
-    try { renderSuggest(await searchPlaces(text, searchCtl.signal), '') }
+    const c = map.getCenter() // results near the area you are looking at come first
+    try { renderSuggest(await searchPlaces(text, searchCtl.signal, { lat: c.lat, lon: c.lng }), '') }
     catch (err) { if (err.name !== 'AbortError') renderSuggest([], navigator.onLine ? 'Place search is unavailable right now. Type coordinates, or use your location or the map.' : 'You are offline. Type coordinates, or open a place you checked before.') }
   }, 250)
 })
@@ -247,10 +248,36 @@ function renderResult(r) {
   const facts = []
   if (r.raptor_alert) facts.push(['Hawk alert', r.raptor_alert])
   if (r.best_time) facts.push(['Best time to fly', r.best_time])
-  if (r.safer_spot) facts.push(['Lower-risk spot nearby', r.safer_spot.label || `${r.safer_spot.distance_km} km ${r.safer_spot.direction}: risk ${r.safer_spot.score}`])
   if (typeof r.bird_score === 'number') facts.push(['Bird risk only', `${r.bird_score}/100`])
   $('r-facts').innerHTML = facts.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')
+  renderSafer(r, hz)
   renderSpotSummary()
+}
+
+// "Is there a lower-risk spot nearby?" Uses the API's safer_spot; when there is none, say why.
+const AREA_WIDE = ['migration', 'wind', 'rain', 'clouds', 'visibility', 'air']
+function renderSafer(r, hz) {
+  const sp = r.safer_spot
+  const placed = sp && Number.isFinite(sp.lat) && Number.isFinite(sp.lon)
+  setSaferSpot(placed ? sp : null, () => goToSafer(sp))
+  if (sp) {
+    $('r-safer').innerHTML = `<p class="safer-t"><b>Lower-risk spot nearby</b> <span class="mono">${esc(sp.label || `${sp.distance_km} km ${sp.direction}: risk ${sp.score}`)}</span></p>` +
+      (placed ? '<button class="btn" type="button" id="safer-go">Check this spot</button>' : '')
+    if (placed) $('safer-go').addEventListener('click', () => goToSafer(sp))
+    return
+  }
+  const bd = band(r.score).cls
+  if (bd === 'green') { $('r-safer').innerHTML = '<p class="safer-t"><b>Lower-risk spot nearby</b> This spot is already low risk.</p>'; return }
+  const wide = hz.filter((h) => AREA_WIDE.includes(h.type) && (h.level === 'red' || h.level === 'yellow'))
+  $('r-safer').innerHTML = '<p class="safer-t"><b>Lower-risk spot nearby</b> ' + (wide.length
+    ? `None within 3 km. The main concern here (${esc(wide.map((h) => titleOf(h.type).toLowerCase()).join(', '))}) covers the whole area, so moving a few kilometres will not lower it.${r.best_time ? ` A better time: ${esc(r.best_time)}.` : ''}`
+    : 'None found within 3 km.') + '</p>'
+}
+function goToSafer(sp) {
+  scenarioKey = null
+  state.spot = { lat: sp.lat, lon: sp.lon, name: `Lower-risk spot, ${sp.distance_km} km ${sp.direction}` }
+  runCheck({ speak: true, why: true })
+  if (state.view !== 'results') go('results')
 }
 
 function hazardItem(h) {
@@ -271,7 +298,7 @@ function renderError(err) {
   $('r-concern').textContent = 'No assessment'
   $('r-score').textContent = '--'
   $('r-summary').textContent = ''
-  $('r-hazards').replaceChildren(); $('r-facts').innerHTML = ''; $('r-complete').textContent = ''; $('r-why').hidden = true
+  $('r-hazards').replaceChildren(); $('r-facts').innerHTML = ''; $('r-complete').textContent = ''; $('r-why').hidden = true; $('r-safer').innerHTML = ''; setSaferSpot(null)
   $('r-error').hidden = false
   const timedOut = err.name === 'TimeoutError' || err.name === 'AbortError' || /abort/i.test(err.message)
   $('r-error').innerHTML = (timedOut ? 'The check took too long. ' : `Could not get an assessment for this spot (${esc(err.message)}). `) +

@@ -91,14 +91,26 @@ export function setPinRisk(cls) {
   pin.setStyle({ fillColor: fill, color: '#0e1013', radius: 9 })
 }
 
-// Demo walk route: the whole path faintly, the part already walked brighter.
+// Demo walk: numbered stops (visited ones in teal), no connecting line.
 export function drawRoute(points, upTo = -1) {
   routeLayer.clearLayers()
   if (!points || points.length < 2) return
-  const ll = points.map((p) => [p.lat, p.lon])
-  L.polyline(ll, { color: '#e8ebef', weight: 2, opacity: 0.35, dashArray: '4 6', interactive: false }).addTo(routeLayer)
-  if (upTo > 0) L.polyline(ll.slice(0, upTo + 1), { color: '#2bb3a0', weight: 3, opacity: 0.9, interactive: false }).addTo(routeLayer)
-  points.forEach((p, i) => L.circleMarker([p.lat, p.lon], { radius: 3, color: i <= upTo ? '#2bb3a0' : '#8a929d', weight: 1, fillOpacity: 1, interactive: false }).addTo(routeLayer))
+  points.forEach((p, i) => {
+    const done = i <= upTo
+    L.marker([p.lat, p.lon], {
+      interactive: false, keyboard: false,
+      icon: L.divIcon({ className: 'stop-icon', html: `<span class="stop ${done ? 'done' : ''}">${i + 1}</span>`, iconSize: [20, 20], iconAnchor: [10, 10] }),
+    }).addTo(routeLayer)
+  })
 }
 export const clearRoute = () => routeLayer && routeLayer.clearLayers()
 export const getMap = () => map
+
+// Lower-risk spot suggested by the API: a green ring the pilot can tap.
+let saferMarker
+export function setSaferSpot(spot, onClick) {
+  if (saferMarker) { saferMarker.remove(); saferMarker = null }
+  if (!spot) return
+  saferMarker = L.circleMarker([spot.lat, spot.lon], { radius: 11, color: '#2f9e5b', weight: 3, fillColor: '#2f9e5b', fillOpacity: 0.25, dashArray: '3 4' })
+    .bindTooltip('Lower-risk spot', { direction: 'top' }).on('click', onClick).addTo(map)
+}
