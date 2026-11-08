@@ -3,95 +3,194 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0e1013" />
-    <title>NestGuard: Will your drone make it back?</title>
+    <meta name="theme-color" content="#0b0e13" />
+    <title>NestGuard: Pre-flight check</title>
     <meta name="description" content="Will your drone make it back? Wind, hawks, migrating birds and power lines, in one answer." />
   </head>
-  <body>
-    <header class="bar">
-      <div class="brand"><a class="wordmark" href="/">NestGuard</a><span class="sub"><b>Will your drone make it back?</b> Wind, hawks, migrating birds and power lines, in one answer.</span></div>
-      <label class="field">Date <input type="date" id="date" /></label>
-      <span id="status" class="status"></span>
+  <body class="pf">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="topbar">
+      <a class="brand" href="/">NestGuard</a>
+      <nav class="steps" aria-label="Pre-flight steps">
+        <button class="step" data-go="setup"><span class="n">1</span>Location</button>
+        <button class="step" data-go="results" disabled><span class="n">2</span>Assessment</button>
+        <button class="step" data-go="explore" disabled><span class="n">3</span>Explore</button>
+      </nav>
+      <button id="conn" class="conn" data-go="offline" aria-label="Connection and backup status"><i class="dot"></i><span id="conn-text">Live</span></button>
     </header>
 
-    <main class="layout">
-      <section class="map-col">
-        <div id="map"></div>
-        <div class="legend">
-          <span class="legend-title">Bird zones</span>
-          <span><i class="sw red"></i>High</span>
-          <span><i class="sw yellow"></i>Medium</span>
-          <span><i class="sw green low"></i>Low</span>
-          <label class="toggle"><input type="checkbox" id="power-toggle" checked /><i class="sw line"></i>Power lines</label>
-          <span id="power-note"></span>
-          <span class="note">Circles show bird risk only, blurred to a 1 km grid. The pin shows the overall risk at your spot.</span>
+    <main id="main">
+      <!-- 1. Location and date -->
+      <section id="v-setup" class="view" data-view="setup" aria-labelledby="setup-h">
+        <div class="setup">
+          <h1 id="setup-h" tabindex="-1">Where are you flying?</h1>
+          <p class="lead">Enter your location and planned date to get your personalized preflight assessment.</p>
+
+          <div class="field">
+            <label for="q">Location</label>
+            <div class="search">
+              <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l3.5 3.5"/></svg>
+              <input id="q" type="text" autocomplete="off" spellcheck="false" placeholder="Search a place, or type coordinates like 42.73, -73.68"
+                role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="q-list" />
+              <ul id="q-list" class="suggest" role="listbox" hidden></ul>
+            </div>
+            <div class="alt">
+              <button id="use-loc" class="btn ghost" type="button">Use my current location</button>
+              <button id="pick-map" class="btn ghost" type="button">Choose on the map</button>
+            </div>
+          </div>
+
+          <div id="sel" class="selected" hidden>
+            <svg class="ic pin" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14.5s4.5-4.2 4.5-7.8a4.5 4.5 0 0 0-9 0C3.5 10.3 8 14.5 8 14.5z"/><circle cx="8" cy="6.7" r="1.6"/></svg>
+            <div><b id="sel-name"></b><span id="sel-coords" class="mono"></span></div>
+          </div>
+
+          <div class="field">
+            <label for="date">Planned date</label>
+            <input id="date" type="date" />
+          </div>
+
+          <button id="go" class="btn primary big" type="button" disabled>Check my location</button>
+          <p id="setup-msg" class="msg" role="status"></p>
+
+          <details class="adv">
+            <summary>Advanced options</summary>
+            <div class="adv-body">
+              <p class="adv-h">Sample places</p>
+              <div class="chips">
+                <button data-preset="rpi-today">RPI campus, today</button>
+                <button data-preset="rpi-may">RPI campus, May 2027</button>
+                <button data-preset="power">Next to a power line, Troy</button>
+                <button data-preset="bolsa">Bolsa Chica, May 13 2021</button>
+              </div>
+              <p class="adv-h">Guided demo</p>
+              <p class="adv-t">Walk through NestGuard step by step along a pretend route in Troy, with today's live data. The controller device follows along.</p>
+              <button id="demo-open" class="btn" type="button">Start the guided demo</button>
+              <p class="adv-h">Offline and backup</p>
+              <p class="adv-t">Check your connection, saved results and the built-in sample data.</p>
+              <button class="btn" type="button" data-go="offline">Open offline and backup</button>
+            </div>
+          </details>
         </div>
       </section>
 
-      <section class="panel-col">
-        <div class="block">
-          <h2 class="label">Scenarios</h2>
-          <div class="row">
-            <button data-preset="rpi-today">RPI today</button>
-            <button data-preset="rpi-may">RPI, May 2027</button>
-            <button data-preset="bolsa">Bolsa Chica, May 13 2021</button>
-            <button data-preset="power">Power line, Troy</button>
-          </div>
-          <div class="row">
-            <button id="demo-start" class="primary">Start live demo walk</button>
-            <button id="demo-stop" class="stop" hidden>Stop demo</button>
-            <span id="demo-info" class="muted mono"></span>
-          </div>
-          <div class="row">
-            <span id="where" class="muted mono">Tap the map to pick a spot</span>
-            <button id="locate" class="ghost">Use my location</button>
-          </div>
-        </div>
+      <!-- 2. Assessment -->
+      <section id="v-results" class="view" data-view="results" aria-labelledby="res-h" hidden>
+        <div class="results">
+          <button class="back" data-go="setup" type="button">Change location or date</button>
+          <p class="eyebrow">Your flight assessment</p>
+          <h1 id="res-h" class="where" tabindex="-1"></h1>
+          <div id="r-saved" class="notice" role="status" hidden></div>
+          <div id="r-error" class="notice error" role="alert" hidden></div>
 
-        <div id="banner" class="verdict none" aria-live="polite">Pick a spot</div>
-
-        <div id="result" hidden>
-          <p id="message" class="message"></p>
-          <ul id="hazards" class="hazards" hidden></ul>
-          <dl class="facts">
-            <div id="bird-row" hidden><dt>Bird risk</dt><dd><span id="bird-score"></span> / 100</dd></div>
-            <div><dt>Best time to fly</dt><dd id="best-time"></dd></div>
-            <div id="safer-row" hidden><dt>Safer spot</dt><dd id="safer"></dd></div>
-          </dl>
-
-          <div id="raptor" class="alert" hidden>
-            <span class="label">Hawk alert</span>
-            <p id="raptor-text"></p>
+          <div id="r-assess" class="assess loading" aria-live="polite">
+            <span id="r-concern" class="concern">Checking</span>
+            <div class="score"><span id="r-score" class="num mono">--</span><span class="of mono">/100</span><span class="score-l">Environmental risk</span></div>
+            <div class="meter" aria-hidden="true"><i id="r-meter"></i></div>
+            <p id="r-summary" class="summary"></p>
           </div>
 
-          <div id="why-block" class="why" hidden>
-            <span class="label">Gemini</span>
-            <p id="why"></p>
+          <div id="r-complete" class="complete"></div>
+
+          <h2 class="sec-h">What should you know?</h2>
+          <ul id="r-hazards" class="haz"></ul>
+
+          <dl id="r-facts" class="facts"></dl>
+          <div id="r-why" class="why" hidden><span class="why-l">In one sentence</span><p id="r-why-t"></p></div>
+
+          <div class="preview">
+            <div class="preview-head"><h2 class="sec-h">Map</h2><span class="muted">Bird activity and power lines around your spot</span></div>
+            <div id="slot-preview" class="slot preview-map"></div>
+            <button class="btn primary" type="button" data-go="explore">Explore the map and details</button>
           </div>
 
-          <div id="reasons-block">
-            <h2 class="label">Reasons</h2>
-            <ul id="reasons" class="reasons"></ul>
+          <div id="device" class="device offline">
+            <span class="device-l">Controller device</span>
+            <span id="device-state">Offline</span>
+            <span class="muted">Temperature <b id="device-temp">Not available</b></span>
+            <span class="muted">Light <b id="device-light">Not available</b></span>
           </div>
         </div>
+      </section>
 
-        <div id="device" class="block device offline">
-          <h2 class="label">Controller device</h2>
-          <dl class="facts">
-            <div><dt>Status</dt><dd id="device-state">Offline</dd></div>
-            <div><dt>Temperature</dt><dd id="device-temp">Not available</dd></div>
-            <div><dt>Light</dt><dd id="device-light">Not available</dd></div>
+      <!-- 3. Explore -->
+      <section id="v-explore" class="view" data-view="explore" aria-labelledby="exp-h" hidden>
+        <div class="explore">
+          <div id="slot-explore" class="slot explore-map"></div>
+          <aside class="side">
+            <button class="back" data-go="results" type="button">Back to the assessment</button>
+            <h1 id="exp-h" class="side-h" tabindex="-1">Explore the area</h1>
+            <p id="exp-spot" class="muted"></p>
+
+            <div id="demo-panel" class="demo" hidden>
+              <span class="badge">Demo walkthrough</span>
+              <p class="demo-t">A pretend walk from RPI campus to a spot next to a power line in Troy. Every step is a real check with today's data, and the controller device follows along.</p>
+              <div class="progress"><span id="demo-step" class="mono">Step 1 of 10</span><div id="demo-dots" class="dots" aria-hidden="true"></div></div>
+              <div id="demo-now" class="demo-now"></div>
+              <div class="demo-ctl">
+                <button id="demo-prev" class="btn" type="button">Previous</button>
+                <button id="demo-play" class="btn primary" type="button">Pause</button>
+                <button id="demo-next" class="btn" type="button">Next</button>
+              </div>
+              <div id="demo-end" class="demo-end" hidden></div>
+              <button id="demo-exit" class="btn ghost" type="button">End the demo</button>
+              <p id="demo-device" class="muted small"></p>
+            </div>
+
+            <div class="layers">
+              <p class="side-l">Layers</p>
+              <label class="tog"><input type="checkbox" id="lay-zones" checked /> Bird activity areas</label>
+              <label class="tog"><input type="checkbox" id="power-toggle" checked /> Power lines</label>
+              <span id="power-note" class="muted small"></span>
+            </div>
+
+            <div class="legend">
+              <p class="side-l">Legend</p>
+              <p><i class="lg zone high"></i>High bird activity</p>
+              <p><i class="lg zone mid"></i>Moderate bird activity</p>
+              <p><i class="lg zone low"></i>Low bird activity</p>
+              <p><i class="lg line"></i>Mapped power line</p>
+              <p><i class="lg pin"></i>Your spot, coloured by overall risk</p>
+              <p class="muted small">Colored areas indicate locations with reported bird activity. These are approximate areas of environmental concern, not flight restrictions. Tap one to learn more.</p>
+            </div>
+
+            <div id="feat" class="feat" aria-live="polite">
+              <p class="muted small">Tap a colored area or a power line on the map to see what it means. Tap anywhere else to check that spot.</p>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- Offline and backup -->
+      <section id="v-offline" class="view" data-view="offline" aria-labelledby="off-h" hidden>
+        <div class="offline">
+          <button class="back" data-go="back" type="button">Back</button>
+          <h1 id="off-h" tabindex="-1">Offline and backup</h1>
+          <dl class="status">
+            <div><dt>Connection</dt><dd id="o-conn"></dd></div>
+            <div><dt>Data you are seeing</dt><dd id="o-source"></dd></div>
+            <div><dt>Last synchronized</dt><dd id="o-sync"></dd></div>
+            <div><dt>Backup on this device</dt><dd id="o-backup"></dd></div>
           </dl>
+          <h2 class="sec-h">What works offline</h2>
+          <ul class="list">
+            <li><b>Places you already checked.</b> NestGuard keeps the last result for each place and date. Offline, it shows that saved copy and marks it with the time it was saved, so you know it may be out of date.</li>
+            <li><b>Sample data.</b> Built-in sample scenarios and the guided demo work with no connection at all. They are examples, not live conditions.</li>
+            <li><b>Spoken alerts.</b> Recorded voice clips play offline; new sentences need a connection.</li>
+            <li><b>Not offline.</b> New places, live weather, the map background and the controller device need a connection.</li>
+          </ul>
+          <h2 class="sec-h">When the connection returns</h2>
+          <p class="muted">NestGuard reloads the latest data for your spot automatically and updates the assessment.</p>
+          <div class="off-actions">
+            <a id="o-sample" class="btn" href="?mock=1">Use sample data</a>
+            <a id="o-live" class="btn" href="?">Return to live data</a>
+          </div>
         </div>
       </section>
     </main>
 
-    <footer class="foot">
-      <a href="/privacy.html">Privacy</a>
-      <a href="/terms.html">Terms</a>
-      <span class="muted">NestGuard, HackRPI 2026</span>
-    </footer>
-
-    <script type="module" src="/src/main.js"></script>
+    <div id="map" class="map"></div>
+    <footer class="pf-foot"><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><span>NestGuard, HackRPI 2026</span></footer>
+    <script type="module" src="/src/preflight/app.js"></script>
   </body>
 </html>

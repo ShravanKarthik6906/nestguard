@@ -19,24 +19,46 @@ const PATH = Array.from({ length: STEPS }, (_, i) => {
   }
 })
 
-let timer = null
-export const isRunning = () => timer !== null
+export const PATH_POINTS = () => PATH
 
-// onPoint(point, index, total) moves the marker and runs /check (done in main.js).
-// onDeviceError(msg) reports a failed POST without stopping the walk.
-export function startDemo(onPoint, onDeviceError) {
+let timer = null
+let index = 0
+let cb = { onPoint: () => {}, onDeviceError: () => {}, onEnd: () => {} }
+export const isRunning = () => timer !== null
+export const currentIndex = () => index
+
+// Show one point: move the marker, run the check (onPoint) and tell the device (POST /device/demo).
+async function show(i) {
+  index = Math.max(0, Math.min(PATH.length - 1, i))
+  const p = PATH[index]
+  cb.onPoint(p, index, PATH.length)
+  try { await setDemo({ lat: p.lat, lon: p.lon, date: demoDate() }) }
+  catch (err) { cb.onDeviceError('Device not updated: ' + err.message) }
+}
+
+// onPoint(point, index, total) moves the marker and runs /check (done by the page).
+// onDeviceError(msg) reports a failed POST without stopping the walk. onEnd() at the last point.
+export function startDemo(onPoint, onDeviceError, onEnd) {
+  cb = { onPoint, onDeviceError: onDeviceError || (() => {}), onEnd: onEnd || (() => {}) }
   stopTimer()
-  let i = 0
-  const step = async () => {
-    const p = PATH[i]
-    onPoint(p, i, PATH.length)
-    try { await setDemo({ lat: p.lat, lon: p.lon, date: demoDate() }) }
-    catch (err) { onDeviceError('Device not updated: ' + err.message) }
-    i++
-    if (i >= PATH.length) stopTimer() // stay on the last (red) point until Stop
-  }
-  step()
-  timer = setInterval(step, EVERY_MS)
+  show(0)
+  resumeDemo()
+}
+
+// Step automatically every EVERY_MS; stays on the last point (device keeps its state) until Stop.
+export function resumeDemo() {
+  stopTimer()
+  if (index >= PATH.length - 1) return
+  timer = setInterval(async () => {
+    await show(index + 1)
+    if (index >= PATH.length - 1) { stopTimer(); cb.onEnd() }
+  }, EVERY_MS)
+}
+export const pauseDemo = () => stopTimer()
+export async function stepDemo(delta) {
+  stopTimer()
+  await show(index + delta)
+  if (index >= PATH.length - 1) cb.onEnd()
 }
 
 function stopTimer() {

@@ -5,7 +5,10 @@ import { band, riskOf } from './risk.js'
 
 export const COLORS = { green: '#2f9e5b', yellow: '#d99a1e', red: '#d64545' }
 
-let map, zoneLayer, powerLayer, pin
+let map, zoneLayer, powerLayer, routeLayer, pin
+const handlers = { zone: null, line: null }
+// Called when someone taps a bird zone or a power line (the redesigned tool shows an explanation panel).
+export function onFeatureClick(kind, fn) { handlers[kind] = fn }
 
 // Fallback: standard OpenStreetMap tiles, darkened with CSS (.osm-dark in style.css)
 const osmLayer = () => L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -34,6 +37,7 @@ export function createMap(el, center) {
   new ResizeObserver(() => map.invalidateSize()).observe(el)
   zoneLayer = L.layerGroup().addTo(map)
   powerLayer = L.layerGroup().addTo(map)
+  routeLayer = L.layerGroup().addTo(map)
   return map
 }
 
@@ -48,8 +52,8 @@ export function drawZones(zones) {
     L.circle([z.lat, z.lon], {
       radius: z.radius_m, color, fillColor: color,
       fillOpacity: low ? 0 : 0.3, weight: low ? 1 : 2, opacity: low ? 0.55 : 1, dashArray: low ? '4 6' : null,
-      interactive: false,
-    }).addTo(zoneLayer)
+      interactive: Boolean(handlers.zone), bubblingMouseEvents: false,
+    }).on('click', () => handlers.zone && handlers.zone(z)).addTo(zoneLayer)
   }
 }
 
@@ -67,6 +71,10 @@ export function drawPowerlines(lines) {
       L.polyline(l.coords, { color: '#0e1013', weight: 4, opacity: 0.6, interactive: false }).addTo(powerLayer)
       L.polyline(l.coords, { color: '#f2f4f6', weight: 1.6, opacity: 0.95, interactive: false }).addTo(powerLayer)
       L.polyline(l.coords, { color: '#f2f4f6', weight: 6, opacity: 0.95, dashArray: '0 22', lineCap: 'round', interactive: false }).addTo(powerLayer)
+      if (handlers.line) {
+        L.polyline(l.coords, { color: '#fff', weight: 16, opacity: 0, bubblingMouseEvents: false })
+          .on('click', () => handlers.line(l)).addTo(powerLayer)
+      }
     }
   }
 }
@@ -82,3 +90,15 @@ export function setPinRisk(cls) {
   const fill = COLORS[cls] || '#e8ebef'
   pin.setStyle({ fillColor: fill, color: '#0e1013', radius: 9 })
 }
+
+// Demo walk route: the whole path faintly, the part already walked brighter.
+export function drawRoute(points, upTo = -1) {
+  routeLayer.clearLayers()
+  if (!points || points.length < 2) return
+  const ll = points.map((p) => [p.lat, p.lon])
+  L.polyline(ll, { color: '#e8ebef', weight: 2, opacity: 0.35, dashArray: '4 6', interactive: false }).addTo(routeLayer)
+  if (upTo > 0) L.polyline(ll.slice(0, upTo + 1), { color: '#2bb3a0', weight: 3, opacity: 0.9, interactive: false }).addTo(routeLayer)
+  points.forEach((p, i) => L.circleMarker([p.lat, p.lon], { radius: 3, color: i <= upTo ? '#2bb3a0' : '#8a929d', weight: 1, fillOpacity: 1, interactive: false }).addTo(routeLayer))
+}
+export const clearRoute = () => routeLayer && routeLayer.clearLayers()
+export const getMap = () => map
