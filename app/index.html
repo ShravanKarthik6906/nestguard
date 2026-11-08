@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#0e1013" />
     <title>KnowFlyZone: Will your drone make it back?</title>
-    <meta name="description" content="Will your drone make it back? Wind, hawks, migrating birds and power lines, in one answer." />
+    <meta name="description" content="A pre-flight safety check for drones: power lines, gusts, low clouds, visibility, hawks and crowds, in one risk score from 0 to 100." />
   </head>
   <body class="landing">
     <nav class="lnav">
@@ -18,7 +18,7 @@
     <header class="hero" id="hero">
       <div class="copy">
         <h1>Will your drone make it back?</h1>
-        <p>Wind, hawks, migrating birds and power lines, in one answer.</p>
+        <p>Power lines, gusts, low clouds, hawks and crowds, in one risk score.</p>
         <div class="btns">
           <a class="btn solid" href="/preflight.html">Start pre-flight check</a>
           <a class="btn" href="/preflight.html?demo=walk">Watch the live demo</a>
@@ -48,18 +48,18 @@
 <g class="wv" style="--fx:0px;--fy:190px;--i:5"><g transform="translate(314 372) scale(2)" class="hg" stroke="#d99a1e"><circle cx="5.5" cy="5" r="1.8"/><circle cx="10.5" cy="5" r="1.8"/><path d="M2.5 13c0-2.5 1.5-4 3-4s3 1.5 3 4M7.5 13c0-2.5 1.5-4 3-4s3 1.5 3 4"/></g><text x="330" y="433" text-anchor="middle">People below</text></g>
 <g transform="translate(330 215)"><g class="wv core" style="--fx:0px;--fy:-60px;--i:6"><path d="M-22 -22 L22 22 M22 -22 L-22 22" class="arm"/><circle cx="-22" cy="-22" r="13" class="rotor"/><circle cx="22" cy="-22" r="13" class="rotor"/><circle cx="-22" cy="22" r="13" class="rotor"/><circle cx="22" cy="22" r="13" class="rotor"/><rect x="-12" y="-16" width="24" height="32" rx="6" class="body"/></g>
 </g></svg>
-        <p class="story"><span class="big">1,500</span> eggs abandoned at Bolsa Chica after one drone crash, May 13, 2021. <a class="link" href="/preflight.html?scenario=bolsa">Replay that check</a></p>
+        <p class="story"><span class="big">40 m</span> from a power line, 2.5 km from RPI. Thin wires are nearly invisible on a phone screen. <a class="link" href="/preflight.html?scenario=power">See that check</a></p>
       </section>
 
       <section id="how" class="place-right place-wide dir-l">
         <span class="label">How it works</span>
-        <h2>Ten hazards, checked together, one answer.</h2>
+        <h2>Ten hazards, checked together, one risk score.</h2>
         <ol class="flowline">
-          <li class="wv" style="--fx:-140px;--fy:0px;--i:0"><span class="n">01</span><span>Pick a spot</span></li>
+          <li class="wv" style="--fx:-140px;--fy:0px;--i:0"><span class="n">01</span><span>Pick a spot and a date</span></li>
           <li class="wv" style="--fx:-140px;--fy:0px;--i:1"><span class="n">02</span><span>Ten hazards checked</span></li>
           <li class="wv" style="--fx:-140px;--fy:0px;--i:2"><span class="n">03</span><span class="verdicts">One risk score, <b class="g">0</b> to <b class="r">100</b></span></li>
         </ol>
-        <p class="credit">Data from eBird, iNaturalist, Open-Meteo, OpenStreetMap and the FAA Part 107 rules. Bird locations are blurred to a 1 km grid.</p>
+        <p class="credit">Weather from Open-Meteo, power lines and buildings from OpenStreetMap, hawk and bird activity from eBird and iNaturalist, with the FAA Part 107 visibility and cloud limits built in.</p>
       </section>
 
       <section id="live" class="place-center dir-u">
@@ -90,12 +90,12 @@
     <text x="340" y="126" text-anchor="end" class="tag">KnowFlyZone</text>
   </g>
 </svg>
-        <p class="credit">Green, yellow or red for the risk, with the score on its screen every five seconds.</p>
+        <p class="credit">It shows the same score as the app on its screen, with a red light for high risk and green for low, and updates every few seconds.</p>
       </section>
 
       <section id="built" class="place-right dir-ul">
         <span class="label">Built with</span>
-        <p class="names">MongoDB Atlas · Tiger Data · Google Gemini · Fish Audio · Vultr</p>
+        <p class="names">MongoDB Atlas · Tiger Data · Google Gemini · Fish Audio · Vultr · NVIDIA Jetson</p>
       </section>
 
       <section id="team" class="place-left dir-r">
