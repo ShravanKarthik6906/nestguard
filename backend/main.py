@@ -382,9 +382,112 @@ def score_spot(lat, lon, date, explain_it=False):
     out["trend"] = trend                          # Tiger Data: weekly sightings near here
     if explain_it:
         out["why"] = explain.why(out)             # U9: Gemini, only when the app asks
-        if tiger.enabled():
-            tiger.log_check(*snap(lat, lon), level, out["score"])   # blurred, app checks only
     return out
+
+
+# --- check cache: a result is reused for 30 min (today/future: weather moves) or 24 h (past
+# dates), in memory and in MongoDB (nestguard.check_cache, TTL index), so it survives restarts.
+# The demo route and the scenario spots are pre-computed at start-up and every 20 min.
+import copy
+import threading
+
+TTL_LIVE_S, TTL_PAST_S = 30 * 60, 24 * 3600
+_mem_cache = {}
+CHECK_CACHE = None
+if ZONES is not None:
+    try:
+        CHECK_CACHE = _client["nestguard"]["check_cache"]
+        CHECK_CACHE.create_index("expires_at", expireAfterSeconds=0)
+    except Exception as e:
+        print("check cache in Mongo unavailable (memory only):", e)
+        CHECK_CACHE = None
+
+
+def _cache_key(lat, lon, date):
+    return f"{round(lat, 4)}:{round(lon, 4)}:{date.isoformat()}"
+
+
+def _cache_get(key):
+    hit = _mem_cache.get(key)
+    if hit and hit[0] > time.time():
+        return hit[1]
+    if CHECK_CACHE is not None:
+        try:
+            doc = CHECK_CACHE.find_one({"_id": key, "expires_at": {"$gt": datetime.datetime.utcnow()}})
+            if doc:
+                exp = doc["expires_at"].replace(tzinfo=datetime.timezone.utc).timestamp()
+                _mem_cache[key] = (exp, doc["result"])
+                return doc["result"]
+        except Exception as e:
+            print("check cache read failed:", e)
+    return None
+
+
+def _cache_put(key, date, out):
+    past = date < datetime.date.today() - datetime.timedelta(days=1)
+    ttl = TTL_PAST_S if past else TTL_LIVE_S
+    _mem_cache[key] = (time.time() + ttl, out)
+    if CHECK_CACHE is not None:
+        try:
+            CHECK_CACHE.replace_one({"_id": key}, {"_id": key, "result": out, "expires_at":
+                                    datetime.datetime.utcnow() + datetime.timedelta(seconds=ttl)}, upsert=True)
+        except Exception as e:
+            print("check cache write failed:", e)
+
+
+def cached_check(lat, lon, date, explain_it=False, log=True):
+    key = _cache_key(lat, lon, date)
+    out = _cache_get(key)
+    if out is None:
+        out = score_spot(lat, lon, date, explain_it=explain_it)
+        _cache_put(key, date, out)
+    elif explain_it and not out.get("why"):
+        out = dict(out, why=explain.why(out))     # cached without the sentence: add it once
+        _cache_put(key, date, out)
+    if explain_it and log and tiger.enabled():
+        tiger.log_check(*snap(lat, lon), scoring.level_for(out["score"]), out["score"])  # app checks only
+    out = copy.deepcopy(out)
+    if not explain_it:
+        out.pop("why", None)
+    return out
+
+
+def demo_spots():
+    """What the demo clicks: the 10-step walk (app/src/demo.js) and the scenario buttons."""
+    start, end = (42.7302, -73.6788), (42.7493, -73.694138)
+    today = lambda la, lo: weather.local_now(la, lo).date()      # the spot's own "today"
+    spots = []
+    for i in range(10):
+        t = i / 9
+        la, lo = (round(start[0] + (end[0] - start[0]) * t, 5), round(start[1] + (end[1] - start[1]) * t, 5))
+        la, lo = float(f"{la:.4f}"), float(f"{lo:.4f}")           # the app sends 4 decimals
+        spots.append((la, lo, today(la, lo)))
+    spots += [(42.7302, -73.6788, datetime.date(2027, 5, 15)),
+              (33.7, -118.04, datetime.date(2021, 5, 13)),
+              (42.7493, -73.6941, today(42.7493, -73.6941))]
+    return spots
+
+
+def _prewarm_loop():
+    time.sleep(5)
+    while True:
+        t0 = time.time()
+        try:
+            spots = demo_spots()
+        except Exception as e:
+            print("pre-warm: spots failed:", e)
+            spots = []
+        for la, lo, d in spots:
+            try:
+                cached_check(la, lo, d, explain_it=True, log=False)
+            except Exception as e:
+                print(f"pre-warm {la},{lo} {d} failed:", e)
+        print(f"pre-warm: {len(spots)} demo checks ready in {time.time() - t0:.0f} s")
+        time.sleep(20 * 60)                       # well inside the 30 min cache life
+
+
+if os.environ.get("NESTGUARD_PREWARM", "1") == "1":
+    threading.Thread(target=_prewarm_loop, daemon=True).start()
 
 
 @app.get("/debug/overpass")
@@ -424,7 +527,7 @@ def check(lat: float, lon: float, date: datetime.date = Query(default_factory=da
     spot the user just checked. The device's own checks never set explain, so no loop."""
     if explain:
         device["demo"] = {"lat": lat, "lon": lon, "date": date.isoformat(), "from": "app"}
-    return score_spot(lat, lon, date, explain_it=explain)
+    return cached_check(lat, lon, date, explain_it=explain)
 
 
 # --- device routes (the Pi polls these)
