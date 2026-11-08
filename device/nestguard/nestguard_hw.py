@@ -9,7 +9,8 @@ WIRING (physical pin numbers on the 40-pin header)
   I2C (LCD + temperature sensor share these):
     SDA -> pin 3      SCL -> pin 5      VCC -> pin 1 (3.3 V)      GND -> pin 9
   LEDs (each: pin -> resistor -> long leg ... short leg -> GND):
-    Red    -> pin 7       Yellow -> pin 15      Green -> pin 13       GND -> pin 14
+    Red    -> pin 7       Green  -> pin 15      GND -> pin 14
+    (two LEDs: low risk = green, medium = green + red, high = red; the LCD always shows the score)
   Stepper driver board:
     IN1 -> pin 29   IN2 -> pin 31   IN3 -> pin 32   IN4 -> pin 33
     VCC -> pin 2 (5 V)   GND -> pin 30
@@ -47,9 +48,39 @@ from smbus2 import SMBus, i2c_msg
 
 # ===================== PINS AND SETTINGS =====================
 RED_PIN = 7
-YELLOW_PIN = 15
-GREEN_PIN = 13
+YELLOW_PIN = None                     # no yellow LED in this build (medium = green + red)
+GREEN_PIN = 15
+LED_PINS = [p for p in (RED_PIN, YELLOW_PIN, GREEN_PIN) if p]
 STEP_PINS = (29, 31, 32, 33)          # IN1, IN2, IN3, IN4
+
+# JetPack 6 boots the header pins as inputs (output switched off), so GPIO.output() does nothing.
+# Pinmux register for each pin, from NVIDIA's Jetson.GPIO pin table (Orin Nano / NX).
+PINMUX = {7: 0x2448030, 12: 0x2434088, 13: 0x243D030, 15: 0x2440020, 16: 0x243D020,
+          29: 0x2430068, 31: 0x2430070, 32: 0x2434080, 33: 0x2434040}
+TRISTATE, INPUT_EN, SFIO = 1 << 4, 1 << 6, 1 << 10
+
+
+def enable_outputs(pins):
+    """Make header pins real GPIO outputs: clear tristate, input-enable and SFIO bits. Needs root.
+    Lasts until reboot; this runs every start, so that's fine."""
+    import mmap
+    import struct
+    fd = os.open("/dev/mem", os.O_RDWR | os.O_SYNC)
+    try:
+        for pin in pins:
+            addr = PINMUX[pin]
+            base = addr & ~0xFFF
+            m = mmap.mmap(fd, 4096, mmap.MAP_SHARED, mmap.PROT_READ | mmap.PROT_WRITE, offset=base)
+            try:
+                old = struct.unpack("<I", m[addr - base:addr - base + 4])[0]
+                new = old & ~(TRISTATE | INPUT_EN | SFIO)
+                if new != old:
+                    m[addr - base:addr - base + 4] = struct.pack("<I", new)
+                    print(f"pin {pin}: pinmux {old:#x} -> {new:#x} (output)")
+            finally:
+                m.close()
+    finally:
+        os.close(fd)
 
 STEPS_PER_REV = 4096                  # half-steps per full turn (28BYJ-48 style geared motor)
 STEP_DELAY_S = 0.002                  # 2 ms per half-step: 90 degrees takes about 2 seconds
@@ -107,9 +138,13 @@ class NestGuard:
         self._sweep_thread = None
 
         # GPIO
+        try:
+            enable_outputs([*LED_PINS, *STEP_PINS])
+        except Exception as e:
+            print("Could not switch the header pins to outputs (run with sudo):", e)
         GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BOARD)
-        GPIO.setup([RED_PIN, YELLOW_PIN, GREEN_PIN, *STEP_PINS], GPIO.OUT, initial=GPIO.LOW)
+        GPIO.setup([*LED_PINS, *STEP_PINS], GPIO.OUT, initial=GPIO.LOW)
 
         # I2C devices
         self.bus = None
@@ -152,7 +187,7 @@ class NestGuard:
     def start_simulation(self):
         """Start-up sequence: splash, LED light check, camera sweep (runs in the background)."""
         self._sim_running = True
-        for pin in (GREEN_PIN, YELLOW_PIN, RED_PIN):
+        for pin in (p for p in (GREEN_PIN, YELLOW_PIN, RED_PIN) if p):
             GPIO.output(pin, GPIO.HIGH)
             time.sleep(0.15)
             GPIO.output(pin, GPIO.LOW)
@@ -199,21 +234,23 @@ class NestGuard:
         self._cancel_sweep.set()
         time.sleep(0.2)
         self._coils_off()
-        GPIO.output([RED_PIN, YELLOW_PIN, GREEN_PIN], GPIO.LOW)
+        GPIO.output(LED_PINS, GPIO.LOW)
         GPIO.cleanup()
         if self.bus is not None:
             self.bus.close()
 
     # ===================== ALERTS =====================
     def _update_leds(self):
-        GPIO.output(GREEN_PIN, GPIO.HIGH if self.state == "GREEN" else GPIO.LOW)
-        GPIO.output(YELLOW_PIN, GPIO.HIGH if self.state == "YELLOW" else GPIO.LOW)
-        if self.state == "RED":
-            GPIO.output(RED_PIN, GPIO.HIGH)
-        elif self.state == "NOLINK":
-            GPIO.output(RED_PIN, GPIO.HIGH if self._blink_on else GPIO.LOW)
-        else:
-            GPIO.output(RED_PIN, GPIO.LOW)
+        s = self.state
+        blink = s == "NOLINK" and self._blink_on
+        if YELLOW_PIN:                        # three LEDs: one per level
+            green, yellow, red = s == "GREEN", s == "YELLOW", s == "RED" or blink
+            GPIO.output(YELLOW_PIN, GPIO.HIGH if yellow else GPIO.LOW)
+        else:                                 # red + green only: medium lights both
+            green, red = s in ("GREEN", "YELLOW"), s in ("RED", "YELLOW") or blink
+        if GREEN_PIN:
+            GPIO.output(GREEN_PIN, GPIO.HIGH if green else GPIO.LOW)
+        GPIO.output(RED_PIN, GPIO.HIGH if red else GPIO.LOW)
 
     def _apply_state(self, state, message):
         with self._state_lock:
@@ -565,8 +602,8 @@ def main():
         print("No I2C devices found: check SDA -> pin 3, SCL -> pin 5, VCC -> pin 1, GND -> pin 9.")
     try:
         if args.demo:
-            steps = [("GREEN", "Clear to fly", -90), ("YELLOW", "Nest zone 200m", 0),
-                     ("RED", "Climb to 300 ft", 90), ("GREEN", "Clear to fly", 0)]
+            steps = [("GREEN", "RISK 12 (low)", -90), ("YELLOW", "RISK 45 (medium)", 0),
+                     ("RED", "RISK 82 (high)", 90), ("GREEN", "RISK 12 (low)", 0)]
             i = 0
             while True:
                 color, msg, angle = steps[i % len(steps)]
