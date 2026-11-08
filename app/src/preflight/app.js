@@ -201,7 +201,7 @@ function renderLoading() {
   $('r-score').textContent = '--'; $('r-meter').style.width = '0'
   $('r-summary').textContent = 'Checking weather, birds, power lines and more…'
   clearTimeout(slowTimer)
-  slowTimer = setTimeout(() => { if ($('r-assess').classList.contains('loading')) $('r-summary').textContent = 'Still checking. The first check in a new area can take up to 20 seconds while NestGuard gathers bird and power-line data.' }, 4000)
+  slowTimer = setTimeout(() => { if ($('r-assess').classList.contains('loading')) $('r-summary').textContent = 'Still checking. The first check in a new area can take up to 20 seconds while KnowFlyZone gathers bird and power-line data.' }, 4000)
   renderContext()
   $('r-error').hidden = true; $('r-saved').hidden = true
 }
@@ -303,7 +303,7 @@ function hazardItem(h) {
   const why = INFO[h.type]?.why || ''
   li.innerHTML = `<details><summary>${icon(h.type)}<span><span class="t">${esc(titleOf(h.type))}</span><span class="d">${esc(detail)}</span></span>` +
     `<span class="sev ${sev.cls}">${sev.label}</span></summary><div class="exp">` +
-    (h.level === 'unknown' ? '<p>This source did not return data for this spot, so NestGuard cannot tell whether this hazard is present. Treat it as unknown, not as safe.</p>' : '') +
+    (h.level === 'unknown' ? '<p>This source did not return data for this spot, so KnowFlyZone cannot tell whether this hazard is present. Treat it as unknown, not as safe.</p>' : '') +
     `<p>${esc(why)}</p>` + (h.type === 'powerlines' ? '<p>Open the map to see the mapped lines around your spot.</p>' : '') + '</div></details>'
   return li
 }
@@ -515,8 +515,8 @@ setInterval(() => { if (state.demo) $('demo-device').textContent = `Controller d
 
 // ---------- why a sample place was picked (shown on its assessment)
 const CONTEXT = {
-  bolsa: 'Why this place? On May 13, 2021, a drone crashed into a nesting colony of terns at Bolsa Chica, California, and about 1,500 eggs were abandoned. This replays the check for that day, to show what NestGuard would have said before that flight.',
-  power: 'Why this place? It is about 40 m from a mapped power line in Troy, New York, to show how NestGuard flags wires near your spot.',
+  bolsa: 'Why this place? On May 13, 2021, a drone crashed into a nesting colony of terns at Bolsa Chica, California, and about 1,500 eggs were abandoned. This replays the check for that day, to show what KnowFlyZone would have said before that flight.',
+  power: 'Why this place? It is about 40 m from a mapped power line in Troy, New York, to show how KnowFlyZone flags wires near your spot.',
   'rpi-may': 'Why this date? May is nesting season, so the same campus spot shows how bird activity changes the assessment.',
 }
 let scenarioKey = null

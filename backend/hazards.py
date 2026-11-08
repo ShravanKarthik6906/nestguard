@@ -23,7 +23,7 @@ OVERPASS = ["https://overpass-api.de/api/interpreter",
             "https://lz4.overpass-api.de/api/interpreter"]
 PRELOAD_FILE = pathlib.Path(__file__).parent / "powerlines_preload.json"   # demo areas, committed
 AQ_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
-UA = {"User-Agent": "NestGuard/1.0 (HackRPI 2026 student project)"}
+UA = {"User-Agent": "KnowFlyZone/1.0 (HackRPI 2026 student project)"}
 
 LINE_RED_M, LINE_YELLOW_M = 100, 300
 QUERY_RADIUS_M = 1500           # one query per ~500 m cell covers any point inside it + 1 km

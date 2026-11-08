@@ -1,5 +1,5 @@
 """
-Tiger Data (TimescaleDB) = the WHEN of NestGuard.   MongoDB Atlas = the WHERE.
+Tiger Data (TimescaleDB) = the WHEN of KnowFlyZone.   MongoDB Atlas = the WHERE.
 
 Hypertables (time-partitioned):
   sightings  : time, cell_lat, cell_lon, spot, grp, n   - blurred ~1 km cells only, never exact points

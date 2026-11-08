@@ -1,5 +1,5 @@
 """
-Live bird zones for places we never seeded, so NestGuard works anywhere.
+Live bird zones for places we never seeded, so KnowFlyZone works anywhere.
 
 When /check or /zones finds no zones in Mongo near a spot, we fetch the last 30 days of
 eBird + iNaturalist sightings around it, blur them to the same ~1 km grid as seed_zones.py,
@@ -58,7 +58,7 @@ def _inat(lat, lon):
                      params={"lat": lat, "lng": lon, "radius": FETCH_KM, "iconic_taxa": "Aves",
                              "per_page": 200, "order_by": "observed_on", "quality_grade": "research",
                              "d1": d1},
-                     headers={"User-Agent": "NestGuard (HackRPI 2026)"},
+                     headers={"User-Agent": "KnowFlyZone (HackRPI 2026)"},
                      timeout=TIMEOUT_S)
     r.raise_for_status()
     return list(sz.inat_sightings(r.json(), "live"))

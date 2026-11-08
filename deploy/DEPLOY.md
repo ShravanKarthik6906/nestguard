@@ -1,4 +1,4 @@
-# Deploying NestGuard on Vultr
+# Deploying KnowFlyZone on Vultr
 
 One small server runs both halves:
 

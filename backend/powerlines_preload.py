@@ -19,7 +19,7 @@ MIRRORS = ["https://overpass-api.de/api/interpreter",
            "https://overpass.kumi.systems/api/interpreter",
            "https://overpass.private.coffee/api/interpreter",
            "https://lz4.overpass-api.de/api/interpreter"]
-UA = {"User-Agent": "NestGuard/1.0 (HackRPI 2026 student project)"}
+UA = {"User-Agent": "KnowFlyZone/1.0 (HackRPI 2026 student project)"}
 
 out = []
 for name, lat, lon, r in AREAS:

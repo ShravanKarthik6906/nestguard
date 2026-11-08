@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-NestGuard on the Jetson Orin Nano alone (no Arduino): the Jetson is the brain AND drives the parts.
+KnowFlyZone on the Jetson Orin Nano alone (no Arduino): the Jetson is the brain AND drives the parts.
 
 Same logic as nestguard.py (backend checks, demo mode, offline zones, telemetry). The LEDs, LCD,
 temperature sensor and camera stepper are driven by nestguard_hw.py straight from the 40-pin header
@@ -93,7 +93,7 @@ def main():
     ng.log("[hw] found:", HW.info())
     threading.Thread(target=heartbeat, daemon=True).start()
     ng.Lights, ng.Screen, ng.Sensors, ng.Motor, ng.GPS = HwLights, HwScreen, HwSensors, NoMotor, NoGPS
-    ng.log(f"NestGuard (Jetson only). Backend: {ng.API}")
+    ng.log(f"KnowFlyZone (Jetson only). Backend: {ng.API}")
     dev = ng.Device()
     server = ng.ThreadingHTTPServer(("0.0.0.0", ng.PORT), ng.make_handler(dev))
     threading.Thread(target=server.serve_forever, daemon=True).start()

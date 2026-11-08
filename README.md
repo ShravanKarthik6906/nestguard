@@ -1,11 +1,11 @@
-# NestGuard
+# KnowFlyZone
 
 ### Will my drone make it back?
 
-NestGuard is a pre-flight safety check for drone pilots. Pick a spot and a date, and it gives you **one risk score from 0 to 100** for that flight, the hazards behind it, the reason in plain English, a lower-risk spot nearby and the best time to fly. A small device on the pilot's side lights up with the same score, so you see it at the launch site without opening your phone.
+KnowFlyZone is a pre-flight safety check for drone pilots. Pick a spot and a date, and it gives you **one risk score from 0 to 100** for that flight, the hazards behind it, the reason in plain English, a lower-risk spot nearby and the best time to fly. A small device on the pilot's side lights up with the same score, so you see it at the launch site without opening your phone.
 
-- **Live app:** https://149-28-239-148.sslip.io
-- **API docs (interactive):** https://149-28-239-148.sslip.io/docs
+- **Live app:** https://knowflyzone.vip (backup address: https://149-28-239-148.sslip.io)
+- **API docs (interactive):** https://knowflyzone.vip/docs
 - **API reference:** [docs/API.md](docs/API.md)
 
 Built at **HackRPI 2026**.
@@ -15,7 +15,7 @@ Built at **HackRPI 2026**.
 ## Contents
 
 1. [The problem](#the-problem)
-2. [What NestGuard does](#what-nestguard-does)
+2. [What KnowFlyZone does](#what-knowflyzone-does)
 3. [What a check looks like](#what-a-check-looks-like)
 4. [The hazards it checks](#the-hazards-it-checks)
 5. [FAA rules built in](#faa-rules-built-in)
@@ -28,7 +28,7 @@ Built at **HackRPI 2026**.
 12. [API](#api)
 13. [Run it yourself](#run-it-yourself)
 14. [Repo layout](#repo-layout)
-15. [What NestGuard does not do](#what-nestguard-does-not-do)
+15. [What KnowFlyZone does not do](#what-knowflyzone-does-not-do)
 16. [Privacy](#privacy)
 17. [Team](#team)
 
@@ -44,11 +44,11 @@ Most drone losses don't come from a broken drone. They come from flying in the w
 - **Hawks and eagles** attack drones that fly near them, and a strike can bring a drone down.
 - **Crowds** below turn a small crash into an injury, and flying over people has its own rules.
 
-The information to avoid all of this exists, but it's spread across weather apps, maps, aviation forecasts and birding sites. Few pilots check five apps before every flight. **NestGuard checks all of it in one step and turns it into one number.**
+The information to avoid all of this exists, but it's spread across weather apps, maps, aviation forecasts and birding sites. Few pilots check five apps before every flight. **KnowFlyZone checks all of it in one step and turns it into one number.**
 
-## What NestGuard does
+## What KnowFlyZone does
 
-For any spot and date, NestGuard returns:
+For any spot and date, KnowFlyZone returns:
 
 | Output | What it tells you |
 |---|---|
@@ -61,7 +61,7 @@ For any spot and date, NestGuard returns:
 | **Voice** | The result read out loud (Fish Audio), so you can keep your eyes up. |
 | **Device** | The same score on an LCD and LEDs next to the pilot. |
 
-NestGuard gives you the risk and the reasons, and **the pilot makes the call**. There's no "go / no-go" verdict: a score with the reasons behind it is more honest than a yes or no.
+KnowFlyZone gives you the risk and the reasons, and **the pilot makes the call**. There's no "go / no-go" verdict: a score with the reasons behind it is more honest than a yes or no.
 
 ## What a check looks like
 
@@ -108,7 +108,7 @@ The weather limits come from the FAA's small-drone rules (Part 107), which also 
 - **Stay 500 ft below the clouds:** with the 400 ft altitude limit, that means the cloud base must be at least **900 ft** (400 + 500). Below that, the cloud row is high.
 - **Flying over people:** dense areas raise the "people below" row.
 
-NestGuard estimates the cloud base from the temperature and dew-point spread, and uses it only when low cloud cover is 50% or more.
+KnowFlyZone estimates the cloud base from the temperature and dew-point spread, and uses it only when low cloud cover is 50% or more.
 
 ## How the risk score works
 
@@ -128,7 +128,7 @@ Every data source can fail. When one does, its row says **"No data here"** (show
 
 ## Lower-risk spot and best time to fly
 
-- **Lower-risk spot:** NestGuard scores candidate spots in 8 directions, from 0.5 to 3 km away, using the same rules (power lines and buildings there, sightings there, the same weather). It suggests the nearest spot in a lower band, or the nearest one at least a few points lower. The weather is the same across the area, so the spots differ by what's local: power lines, buildings and wildlife.
+- **Lower-risk spot:** KnowFlyZone scores candidate spots in 8 directions, from 0.5 to 3 km away, using the same rules (power lines and buildings there, sightings there, the same weather). It suggests the nearest spot in a lower band, or the nearest one at least a few points lower. The weather is the same across the area, so the spots differ by what's local: power lines, buildings and wildlife.
 - **Best time to fly:** for today, it scans every daylight hour from now to the end of tomorrow and reports the first window with the lowest risk. For other dates, it scans that day's daylight hours.
 
 ## The pilot-side device
@@ -230,9 +230,9 @@ sudo venv/bin/python jetson_direct.py           # the real thing
 | `deploy/` | Caddy config, systemd service, setup script |
 | `docs/` | API reference and design rules |
 
-## What NestGuard does not do
+## What KnowFlyZone does not do
 
-NestGuard helps you judge risk. It is **not** an airspace authorization tool:
+KnowFlyZone helps you judge risk. It is **not** an airspace authorization tool:
 
 - It does **not** check controlled airspace, temporary flight restrictions (TFRs) or airport distances. Use the FAA's B4UFLY or a LAANC provider for that.
 - It does not replace your own look at the site. Trees, buildings and new obstacles may not be on the map.
@@ -240,7 +240,7 @@ NestGuard helps you judge risk. It is **not** an airspace authorization tool:
 
 ## Privacy
 
-- NestGuard never asks for or stores the pilot's identity. Checks are logged only as a blurred ~1 km cell, a score and a time.
+- KnowFlyZone never asks for or stores the pilot's identity. Checks are logged only as a blurred ~1 km cell, a score and a time.
 - Wildlife sightings are stored only as blurred ~1 km cells, never as exact points.
 - Gemini only sees the score and the hazard text, never coordinates.
 - All keys stay in the server's `.env`, which is never committed.

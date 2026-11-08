@@ -416,9 +416,9 @@ class Device:
         self.last_red_buzz = 0
         self.temp = self.light = None
         self.ticker = ""
-        self.headline = "NestGuard"
+        self.headline = "KnowFlyZone"
         self.zones = self._load_zones()
-        self.screen.write("NestGuard ready", "Waiting for data")
+        self.screen.write("KnowFlyZone", "Waiting for data")
         self.lights.show("unknown")
         threading.Thread(target=self._ticker_loop, daemon=True).start()
 
@@ -625,7 +625,7 @@ def make_handler(dev):
 
 
 def main():
-    log(f"NestGuard starting on {'Jetson' if JETSON else 'Raspberry Pi'}. Backend: {API}{CHECK_PATH}  "
+    log(f"KnowFlyZone starting on {'Jetson' if JETSON else 'Raspberry Pi'}. Backend: {API}{CHECK_PATH}  "
         f"I2C bus {I2C_BUS}, GPS {GPS_PORT}, local API port {PORT}")
     dev = Device()
     server = ThreadingHTTPServer(("0.0.0.0", PORT), make_handler(dev))
@@ -633,7 +633,7 @@ def main():
     try:
         dev.run()
     except KeyboardInterrupt:
-        dev.screen.write("NestGuard", "stopped")
+        dev.screen.write("KnowFlyZone", "stopped")
         dev.lights.show("off")
         log("stopped")
 

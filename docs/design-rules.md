@@ -1,4 +1,4 @@
-# NestGuard design rules
+# KnowFlyZone design rules
 
 Applies to the web app, the landing page, slides and Devpost.
 

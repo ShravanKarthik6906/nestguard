@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-NestGuard hardware driver: Jetson Orin Nano only (no Arduino)
+KnowFlyZone hardware driver: Jetson Orin Nano only (no Arduino)
 
 Drives the 3 alert LEDs, the camera pan stepper (IN1-IN4 driver board),
 the 16x2 I2C LCD and the I2C temperature sensor, straight from the 40-pin header.
@@ -24,7 +24,7 @@ USE FROM THE SIMULATION
   ng.stop_simulation()                      # deliberate stop: LEDs off, camera to 0, "Sim stopped"
   ng.close()                                # always call at exit
 
-  - The first set_state() runs the start-up sequence: "NestGuard ON" on the LCD, each LED flashes
+  - The first set_state() runs the start-up sequence: "KnowFlyZone ON" on the LCD, each LED flashes
     once, camera sweeps -90 -> +90 -> 0. (Or call ng.start_simulation() yourself.)
   - Fail-safe: if set_state() isn't called for 5 seconds, the red LED blinks and the LCD says NO LINK.
   - LCD messages are cut to 16 characters.
@@ -194,7 +194,7 @@ class NestGuard:
             time.sleep(0.05)
         self._update_leds()
         self._splash_until = time.time() + SPLASH_S
-        self._lcd_line(0, "NestGuard ON")
+        self._lcd_line(0, "KnowFlyZone ON")
         self._lcd_line(1, "Sim started")
         self._cancel_sweep.clear()
         self._sweep_thread = threading.Thread(target=self._sweep, daemon=True)
@@ -592,7 +592,7 @@ class NestGuard:
 
 # ===================== TEST / DEMO =====================
 def main():
-    ap = argparse.ArgumentParser(description="NestGuard Jetson hardware test")
+    ap = argparse.ArgumentParser(description="KnowFlyZone Jetson hardware test")
     ap.add_argument("--demo", action="store_true", help="cycle GREEN / YELLOW / RED and pan the camera")
     args = ap.parse_args()
 

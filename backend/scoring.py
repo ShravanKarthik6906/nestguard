@@ -1,5 +1,5 @@
 """
-U4: NestGuard risk score (0-100). Bands (low/medium/high) are used for hazard dots only.
+U4: KnowFlyZone risk score (0-100). Bands (low/medium/high) are used for hazard dots only.
 
 For every blurred zone near the pilot:
   zone_risk = proximity x amount x recency x season x group

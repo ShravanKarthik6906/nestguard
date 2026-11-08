@@ -1,5 +1,5 @@
 """
-NestGuard backend - starter (mock first, real later).
+KnowFlyZone backend - starter (mock first, real later).
 
 Run:
   pip install fastapi uvicorn
@@ -27,7 +27,7 @@ import scoring
 import tiger
 import weather
 
-app = FastAPI(title="NestGuard API")
+app = FastAPI(title="KnowFlyZone API")
 
 if tiger.enabled():                     # Tiger Data hypertables (time series); optional
     import threading
