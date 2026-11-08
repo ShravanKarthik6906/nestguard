@@ -406,3 +406,6 @@ body.pf > .map { display: none; }
 .pf .logo-mark { display: block; width: 40px; height: 30px; flex: none; }
 .pf .logo-word { font-family: 'B612', system-ui, sans-serif; font-weight: 700; font-size: 16px; letter-spacing: 0.08em; color: #e8ebef; white-space: nowrap; }
 .pf .logo-word .silent { color: #d99a1e; }
+
+.pf .fly-btn { display: block; text-align: center; margin-top: 8px; text-decoration: none; }
+.pf .fly-btn[hidden] { display: none; }

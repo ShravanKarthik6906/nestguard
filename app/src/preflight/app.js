@@ -427,6 +427,9 @@ function renderSpotSummary() {
       (driver ? `<p class="exp-driver">${esc(driver)}</p>` : '')
   }
   // opens the 3D flight simulator (its own page at /fly/) at this spot; not during the guided demo
+  const rfly = $('r-fly')
+  rfly.hidden = !r
+  if (r) rfly.href = `/fly/?lat=${state.spot.lat.toFixed(5)}&lon=${state.spot.lon.toFixed(5)}`
   const fly = $('exp-fly')
   fly.hidden = !r || state.demo
   if (r) fly.href = `/fly/?lat=${state.spot.lat.toFixed(5)}&lon=${state.spot.lon.toFixed(5)}&height=${heightFt()}`
