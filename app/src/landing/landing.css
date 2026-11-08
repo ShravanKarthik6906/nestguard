@@ -185,3 +185,8 @@ svg .wv { transform-box: fill-box; }
   .lnav .logo-mark { width: 22px; height: 17px; }
   .lnav .logo-word { font-size: 9.5px; letter-spacing: 0.02em; }
 }
+
+/* the "why" paragraph in the problem section */
+.story.why { max-width: 62ch; font-size: clamp(16px, 1.6vw, 19px); line-height: 1.6; color: var(--muted); }
+.story.why strong, .story.why em { color: var(--text); }
+.story.why em { font-style: normal; font-weight: 700; }
