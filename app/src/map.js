@@ -108,9 +108,26 @@ export const getMap = () => map
 
 // Lower-risk spot suggested by the API: a green ring the pilot can tap.
 let saferMarker
+const DIR_SHORT = { north: 'N', northeast: 'NE', east: 'E', southeast: 'SE', south: 'S', southwest: 'SW', west: 'W', northwest: 'NW' }
+// The lower-risk spot: a labelled teal flag ("LOWER RISK 47 · 1 km NE"). Teal is the app's action colour,
+// never a risk colour, so it can't be mistaken for your spot or a bird zone. A dotted guide links the two.
 export function setSaferSpot(spot, onClick) {
   if (saferMarker) { saferMarker.remove(); saferMarker = null }
   if (!spot) return
-  saferMarker = L.circleMarker([spot.lat, spot.lon], { radius: 11, color: '#2f9e5b', weight: 3, fillColor: '#2f9e5b', fillOpacity: 0.25, dashArray: '3 4' })
-    .bindTooltip('Lower-risk spot', { direction: 'top' }).on('click', onClick).addTo(map)
+  const dist = spot.distance_km != null ? ` · ${spot.distance_km} km ${DIR_SHORT[spot.direction] || ''}` : ''
+  const flag = L.marker([spot.lat, spot.lon], {
+    keyboard: false, zIndexOffset: 500, title: 'Lower-risk spot: tap to check it',
+    icon: L.divIcon({ className: 'safer-icon', iconSize: [0, 0], iconAnchor: [0, 0],
+      html: `<span class="safer-flag"><span class="safer-flag-l">Lower risk <b>${spot.score}</b>${dist}</span><i></i></span>` }),
+  }).on('click', () => onClick && onClick())
+  const layers = [flag]
+  if (pin) layers.unshift(L.polyline([pin.getLatLng(), [spot.lat, spot.lon]], { color: '#2bb3a0', weight: 2.5, opacity: 0.85, dashArray: '2 7', interactive: false }))
+  saferMarker = L.layerGroup(layers).addTo(map)
+}
+
+// Frame your spot and the lower-risk spot together (falls back to centring on your spot).
+export function frameSpot(lat, lon, minZoom = 14) {
+  const flag = saferMarker && saferMarker.getLayers().find((l) => l instanceof L.Marker)
+  if (flag) map.fitBounds(L.latLngBounds([[lat, lon], flag.getLatLng()]), { padding: [70, 70], maxZoom: 16 })
+  else map.setView([lat, lon], Math.max(map.getZoom(), minZoom))
 }
