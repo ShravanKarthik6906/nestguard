@@ -266,12 +266,13 @@ function renderSafer(r, hz) {
     if (placed) $('safer-go').addEventListener('click', () => goToSafer(sp))
     return
   }
-  const bd = band(r.score).cls
-  if (bd === 'green') { $('r-safer').innerHTML = '<p class="safer-t"><b>Lower-risk spot nearby</b> This spot is already low risk.</p>'; return }
+  const head = '<p class="safer-t"><b>Lower-risk spot nearby</b> '
+  if (r.bird_score == null) { $('r-safer').innerHTML = head + 'Cannot compare nearby spots: there is no bird data for this area.</p>'; return }
+  if (band(r.score).cls === 'green') { $('r-safer').innerHTML = head + 'This spot is already low risk.</p>'; return }
   const wide = hz.filter((h) => AREA_WIDE.includes(h.type) && (h.level === 'red' || h.level === 'yellow'))
-  $('r-safer').innerHTML = '<p class="safer-t"><b>Lower-risk spot nearby</b> ' + (wide.length
-    ? `None within 3 km. The main concern here (${esc(wide.map((h) => titleOf(h.type).toLowerCase()).join(', '))}) covers the whole area, so moving a few kilometres will not lower it.${r.best_time ? ` A better time: ${esc(r.best_time)}.` : ''}`
-    : 'None found within 3 km.') + '</p>'
+  $('r-safer').innerHTML = head + 'Nothing within 3 km scores lower, so this is about as good as it gets nearby.' +
+    (wide.length ? ` The main concern (${esc(wide.map((h) => titleOf(h.type).toLowerCase()).join(', '))}) covers the whole area.` : '') +
+    (r.best_time ? ` A better time: ${esc(r.best_time)}.` : '') + '</p>'
 }
 function goToSafer(sp) {
   scenarioKey = null

@@ -176,20 +176,27 @@ def hazards(w):
         windy = (gust or 0) >= GUST_MPH or (wind80 or 0) >= WIND80_MPH
         parts = ([f"{gust:.0f} mph gusts"] if gust is not None else []) + \
                 ([f"{wind80:.0f} mph at drone height"] if wind80 is not None else [])
-        out.append({"type": "wind", "level": "yellow" if windy else "green", "detail": ", ".join(parts)})
+        r = max((gust or 0) / GUST_MPH, (wind80 or 0) / WIND80_MPH)       # 1.0 = at the limit
+        out.append({"type": "wind", "level": "yellow" if windy else "green", "detail": ", ".join(parts),
+                    "sev": r - 1 if windy else r})
     rain, t = w.get("precipitation") or 0, w.get("temperature_2m")
     out.append({"type": "rain", "level": "yellow" if rain >= HEAVY_RAIN_MM else "green",
                 "detail": "Heavy rain" if rain >= HEAVY_RAIN_MM else
-                ("Light rain" if rain >= RAIN_MM else "No rain") + (f", {t:.0f}F" if t is not None else "")})
+                ("Light rain" if rain >= RAIN_MM else "No rain") + (f", {t:.0f}F" if t is not None else ""),
+                "sev": rain / HEAVY_RAIN_MM - (1 if rain >= HEAVY_RAIN_MM else 0)})
     vis = w.get("visibility")
     if vis is not None:
         out.append({"type": "visibility", "level": "red" if vis < MIN_VIS_M else "green",
-                    "detail": f"Visibility {vis / 1609:.1f} mi" + (" (legal minimum is 3 mi)" if vis < MIN_VIS_M else "")})
+                    "detail": f"Visibility {vis / 1609:.1f} mi" + (" (legal minimum is 3 mi)" if vis < MIN_VIS_M else ""),
+                    "sev": (MIN_VIS_M - vis) / MIN_VIS_M if vis < MIN_VIS_M else (16093 - vis) / (16093 - MIN_VIS_M)})
     low, dew = w.get("cloud_cover_low"), w.get("dew_point_2m")
     if low is not None and t is not None and dew is not None:
         base = max(0, (t - dew) / 4.4 * 1000)
         too_low = low >= 50 and base < MIN_CLOUD_BASE_FT
         out.append({"type": "clouds", "level": "red" if too_low else "green",
                     "detail": f"Cloud base about {base:.0f} ft" + (" (FAA needs 500 ft below clouds)" if too_low else "")
-                    if low >= 50 else f"Low clouds {low:.0f}%"})
+                    if low >= 50 else f"Low clouds {low:.0f}%",
+                    # red: how far below the limit; green: low cloud cover x how close the base is to the limit
+                    "sev": (MIN_CLOUD_BASE_FT - base) / MIN_CLOUD_BASE_FT if too_low else
+                           low / 100 * (3000 - base) / (3000 - MIN_CLOUD_BASE_FT)})
     return out

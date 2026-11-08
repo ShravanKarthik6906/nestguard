@@ -186,43 +186,56 @@ def us_aqi(lat, lon, date):
 
 
 # ------------------------------------------------------------------ the hazard list
-def assess(lat, lon, date, nearby_sightings):
-    """Returns (hazards list, wildlife multiplier). Each hazard: type, level, detail."""
-    out, mult = [], 1.0
-
+def local(lat, lon):
+    """Power lines and buildings at one spot: [powerlines hazard, crowd hazard], or None if no data."""
     area = osm_area(lat, lon)
     if area is None:
-        out.append({"type": "powerlines", "level": "unknown", "detail": "Power line data unavailable"})
+        return None
+    out = []
+    d = nearest_line_m(lat, lon, area["lines"])
+    if d is None or d > 1000:
+        out.append({"type": "powerlines", "level": "green", "detail": "No power lines within 1 km", "sev": 0})
+    else:
+        lvl = "red" if d <= LINE_RED_M else "yellow" if d <= LINE_YELLOW_M else "green"
+        # sev: how far into its level the distance is (closer = higher)
+        sev = ((LINE_RED_M - d) / LINE_RED_M if lvl == "red" else
+               (LINE_YELLOW_M - d) / (LINE_YELLOW_M - LINE_RED_M) if lvl == "yellow" else
+               (1000 - d) / (1000 - LINE_YELLOW_M))
+        out.append({"type": "powerlines", "level": lvl, "detail": f"Power line {round(d / 10) * 10:.0f} m away", "sev": sev})
+    b = area["buildings"]
+    if b is None:
         out.append({"type": "crowd", "level": "unknown", "detail": "Building data unavailable"})
+    elif b >= BUILDINGS_YELLOW:
+        out.append({"type": "crowd", "level": "yellow", "detail": f"Dense area: people below ({b} buildings within 300 m)",
+                    "sev": (b - BUILDINGS_YELLOW) / BUILDINGS_YELLOW})
     else:
-        d = nearest_line_m(lat, lon, area["lines"])
-        if d is None or d > 1000:
-            out.append({"type": "powerlines", "level": "green", "detail": "No power lines within 1 km"})
-        else:
-            lvl = "red" if d <= LINE_RED_M else "yellow" if d <= LINE_YELLOW_M else "green"
-            out.append({"type": "powerlines", "level": lvl, "detail": f"Power line {round(d / 10) * 10:.0f} m away"})
-        b = area["buildings"]
-        if b is None:
-            out.append({"type": "crowd", "level": "unknown", "detail": "Building data unavailable"})
-        elif b >= BUILDINGS_YELLOW:
-            out.append({"type": "crowd", "level": "yellow", "detail": f"Dense area: people below ({b} buildings within 300 m)"})
-        else:
-            out.append({"type": "crowd", "level": "green", "detail": f"{b} buildings within 300 m"})
+        out.append({"type": "crowd", "level": "green", "detail": f"{b} buildings within 300 m", "sev": b / BUILDINGS_YELLOW})
+    return out
 
+
+def migration(lat, date, nearby_sightings):
+    """(migration hazard, wildlife multiplier). Busier spots (more sightings within 2 km) score higher."""
     month = date.month if lat >= 0 else (date.month + 5) % 12 + 1
-    if month in MIGRATION_MONTHS:
-        busy = nearby_sightings >= MIGRATION_BUSY
-        if busy:
-            mult *= 1.2
-        out.append({"type": "migration", "level": "yellow",
-                    "detail": "Migration season: high bird activity" if busy else "Migration season"})
-    else:
-        out.append({"type": "migration", "level": "green", "detail": "Outside migration season"})
+    if month not in MIGRATION_MONTHS:
+        return {"type": "migration", "level": "green", "detail": "Outside migration season", "sev": 0}, 1.0
+    busy = nearby_sightings >= MIGRATION_BUSY
+    return ({"type": "migration", "level": "yellow",
+             "detail": "Migration season: high bird activity" if busy else "Migration season",
+             "sev": nearby_sightings / (2 * MIGRATION_BUSY)}, 1.2 if busy else 1.0)
+
+
+def assess(lat, lon, date, nearby_sightings):
+    """Returns (hazards list, wildlife multiplier). Each hazard: type, level, detail (+ internal sev)."""
+    out = local(lat, lon) or [{"type": "powerlines", "level": "unknown", "detail": "Power line data unavailable"},
+                              {"type": "crowd", "level": "unknown", "detail": "Building data unavailable"}]
+    mig, mult = migration(lat, date, nearby_sightings)
+    out.append(mig)
 
     aqi = us_aqi(lat, lon, date)
     if aqi is None:
         out.append({"type": "air", "level": "unknown", "detail": "Air quality unavailable"})
     else:
         out.append({"type": "air", "level": "yellow" if aqi > AQI_YELLOW else "green",
-                    "detail": f"Air quality index {aqi:.0f}" + (" (smoke, low visibility)" if aqi > AQI_YELLOW else "")})
+                    "detail": f"Air quality index {aqi:.0f}" + (" (smoke, low visibility)" if aqi > AQI_YELLOW else ""),
+                    "sev": aqi / AQI_YELLOW - (1 if aqi > AQI_YELLOW else 0)})
     return out, mult
