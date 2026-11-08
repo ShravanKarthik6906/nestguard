@@ -133,6 +133,7 @@ const PRESETS = {
   'rpi-today': { lat: 42.7302, lon: -73.6788, date: today },
   'rpi-may':   { lat: 42.7302, lon: -73.6788, date: () => '2027-05-15' },
   'bolsa':     { lat: 33.70, lon: -118.04, date: () => '2021-05-13' },
+  'power':     { lat: 42.7493, lon: -73.694138, date: today },
 }
 document.querySelectorAll('[data-preset]').forEach((btn) => {
   btn.addEventListener('click', () => {
