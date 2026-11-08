@@ -209,7 +209,8 @@ def score_spot(lat, lon, date, explain_it=False):
     mult, w_reasons, w_min, checks = weather.assess(w)                                   # U5/U6
     trend = tiger.trend(lat, lon, date) if tiger.enabled() else None                    # Tiger Data
     trend_reason = []
-    if trend and trend["ratio"] and trend["ratio"] >= 2 and trend["recent"] >= 5:
+    # only claim a rise when the earlier weeks have a real baseline (eBird gives us 30 days)
+    if trend and trend["ratio"] and trend["ratio"] >= 2 and trend["recent"] >= 5 and trend["before"] >= 10:
         mult *= 1.15
         trend_reason = [f"Sightings up {trend['ratio']:g}x in the last 2 weeks"]
     near_n = sum(z.get("sightings", 0) for z in zones
@@ -228,8 +229,14 @@ def score_spot(lat, lon, date, explain_it=False):
 
     # ---- the hazard breakdown (overall level = the worst hazard)
     raptor = out.get("raptor_alert")
-    hazards = [{"type": "nesting", "level": bird_level,
-                "detail": next((r for r in out["reasons"] if "season" in r.lower()), f"Bird risk {bird_score}/100")},
+    season = next((r for r in out["reasons"] if "season" in r.lower()), "")
+    if bird_level == "green":
+        nest_detail = season or f"Bird risk {bird_score}/100"
+    elif season.startswith("Outside"):
+        nest_detail = f"Outside nesting season, but busy: bird risk {bird_score}/100"
+    else:
+        nest_detail = season or f"Bird risk {bird_score}/100"
+    hazards = [{"type": "nesting", "level": bird_level, "detail": nest_detail},
                {"type": "raptors",
                 "level": ("red" if raptor and "nesting season" in raptor else "yellow") if raptor else "green",
                 "detail": "Hawk or eagle sightings within 1 km" if raptor else "No hawks or eagles seen nearby"}]
@@ -279,10 +286,24 @@ def score_spot(lat, lon, date, explain_it=False):
     return out
 
 
+@app.get("/debug/overpass")
+def debug_overpass():
+    """Why power lines show "unknown": the last Overpass error, and one live test call."""
+    hz._overpass_down_until = 0
+    test = hz._overpass(42.73, -73.68, 300)
+    return {"ok": test is not None, "lines_found": len(test["lines"]) if test else None,
+            "last_error": hz._last_error}
+
+
 @app.get("/powerlines")
 def powerlines(lat: float, lon: float, radius_km: float = 1):
-    """Power-line polylines near a point (OpenStreetMap, cached). Public data, exact geometry."""
-    return hz.powerlines(lat, lon, min(radius_km, 1.5))
+    """Power-line polylines near a point (OpenStreetMap; demo areas pre-loaded, others cached).
+    503 = data unavailable right now (not the same as "no power lines")."""
+    from fastapi import HTTPException
+    lines = hz.powerlines(lat, lon, min(radius_km, 1.5))
+    if lines is None:
+        raise HTTPException(status_code=503, detail="Power line data unavailable right now")
+    return lines
 
 
 @app.get("/zones")

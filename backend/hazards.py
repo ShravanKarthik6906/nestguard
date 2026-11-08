@@ -18,8 +18,10 @@ import time
 import requests
 
 OVERPASS = ["https://overpass-api.de/api/interpreter",
-            "https://lz4.overpass-api.de/api/interpreter",
-            "https://z.overpass-api.de/api/interpreter"]
+            "https://overpass.kumi.systems/api/interpreter",
+            "https://overpass.private.coffee/api/interpreter",
+            "https://lz4.overpass-api.de/api/interpreter"]
+PRELOAD_FILE = pathlib.Path(__file__).parent / "powerlines_preload.json"   # demo areas, committed
 AQ_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
 UA = {"User-Agent": "NestGuard/1.0 (HackRPI 2026 student project)"}
 
@@ -73,17 +75,47 @@ def nearest_line_m(lat, lon, lines):
     return best
 
 
+# ------------------------------------------------------------------ pre-loaded demo areas
+try:
+    _preload = json.loads(PRELOAD_FILE.read_text())       # [{name, lat, lon, radius_m, lines, buildings}]
+except Exception:
+    _preload = []
+
+
+def _from_preload(lat, lon):
+    """Lines + building count from a pre-loaded area that fully covers this point, else None."""
+    for a in _preload:
+        d = math.hypot(*(p - q for p, q in zip(_xy(lat, lon, lat), _xy(a["lat"], a["lon"], lat))))
+        if d + 1000 <= a["radius_m"]:                      # the 1 km around the point is inside the area
+            me = _xy(lat, lon, lat)
+            near = sum(1 for b in a["buildings"] if math.hypot(*(p - q for p, q in zip(me, _xy(b[0], b[1], lat)))) <= 300)
+            return {"lines": a["lines"], "buildings": near, "source": f"preloaded ({a['name']})"}
+    return None
+
+
 # ------------------------------------------------------------------ Overpass
+_overpass_down_until = 0
+_last_error = None
+
+
 def _overpass(lat, lon, radius_m):
+    global _overpass_down_until, _last_error
+    if time.time() < _overpass_down_until:
+        return None                                   # failed recently: don't slow every check
     q = (f'[out:json][timeout:25];'
          f'(way(around:{radius_m},{lat},{lon})["power"~"^(line|minor_line)$"];)->.p;.p out geom;'
          f'way(around:300,{lat},{lon})["building"];out count;')
-    last = None
+    last, started = None, time.time()
     for url in OVERPASS:
         try:
-            r = requests.post(url, data={"data": q}, headers=UA, timeout=12)
+            if time.time() - started > 20:
+                break                                     # never hold a /check longer than ~20 s
+            r = requests.post(url, data={"data": q}, headers=UA, timeout=8)
             if r.status_code == 429:
                 last = "rate limited"
+                continue
+            if r.status_code >= 500:
+                last = f"{url}: HTTP {r.status_code}"
                 continue
             r.raise_for_status()
             lines, buildings = [], None
@@ -94,22 +126,27 @@ def _overpass(lat, lon, radius_m):
                                   "voltage": (el.get("tags") or {}).get("voltage")})
                 elif el.get("type") == "count":
                     buildings = int((el.get("tags") or {}).get("ways", 0))
-            return {"lines": lines, "buildings": buildings}
+            return {"lines": lines, "buildings": buildings, "source": "live"}
         except Exception as e:
-            last = e
-    print("Overpass unavailable:", last)
+            last = f"{url}: {e}"
+    print("Overpass unavailable for 2 min:", last)
+    _last_error = str(last)[:300]
+    _overpass_down_until = time.time() + 120
     return None
 
 
 def osm_area(lat, lon):
     """Power lines within ~1 km and the building count near this ~500 m cell (cached 6 h)."""
+    pre = _from_preload(lat, lon)                                        # demo areas first
+    if pre:
+        return pre
     clat, clon = round(lat * 200) / 200, round(lon * 200) / 200          # 0.005 deg cell
     key = f"{clat},{clon}"
     hit = _cache.get(key)
     if hit and time.time() - hit["t"] < TTL_S:
         return hit["v"]
     v = _overpass(clat, clon, QUERY_RADIUS_M)
-    if v is not None:
+    if v is not None:                                                    # only successes are cached
         # building count is for the cell centre; good enough for "is this a dense area"
         _cache[key] = {"t": time.time(), "v": v}
         _save()
@@ -117,10 +154,10 @@ def osm_area(lat, lon):
 
 
 def powerlines(lat, lon, radius_km=1.0):
-    """For the map: power-line polylines within radius_km of the point."""
+    """For the map: power-line polylines within radius_km of the point. None = data unavailable."""
     area = osm_area(lat, lon)
     if not area:
-        return []
+        return None
     r = radius_km * 1000
     return [{"coords": l["coords"], "kind": l["kind"], "voltage": l["voltage"]}
             for l in area["lines"] if (nearest_line_m(lat, lon, [l]) or 1e9) <= r]
