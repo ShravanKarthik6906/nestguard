@@ -20,6 +20,7 @@ from fastapi import Body, FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 import explain
+import hazards as hz
 import scoring
 import tiger
 import weather
@@ -190,31 +191,76 @@ def safer_spot(lat, lon, date, level, weather_min):
     return best
 
 
+POINTS = {"yellow": 15, "red": 40}          # extra score points per non-bird hazard
+HAZARD_MESSAGE = {
+    "powerlines": {"red": "Don't fly: power line too close, move at least 100 m away",
+                   "yellow": "Wait: power line nearby, stay low and keep it in sight"},
+    "crowd": {"yellow": "Wait: dense area with people below"},
+    "migration": {"yellow": "Wait: migration season, watch for flocks"},
+    "air": {"yellow": "Wait: smoky air, low visibility"},
+    "raptors": {"red": "Don't fly: hawks or eagles nesting nearby may attack",
+                "yellow": "Wait: hawks or eagles nearby, watch the sky"},
+}
+
+
 def score_spot(lat, lon, date, explain_it=False):
     zones = get_zones(lat, lon, 5)
-    mult, w_reasons, w_min, checks = weather.assess(weather.conditions(lat, lon, date))  # U5/U6
+    w = weather.conditions(lat, lon, date)
+    mult, w_reasons, w_min, checks = weather.assess(w)                                   # U5/U6
     trend = tiger.trend(lat, lon, date) if tiger.enabled() else None                    # Tiger Data
     trend_reason = []
     if trend and trend["ratio"] and trend["ratio"] >= 2 and trend["recent"] >= 5:
         mult *= 1.15
         trend_reason = [f"Sightings up {trend['ratio']:g}x in the last 2 weeks"]
+    near_n = sum(z.get("sightings", 0) for z in zones
+                 if dist_m(lat, lon, z["lat"], z["lon"]) <= 2000 + z.get("radius_m", 500))
+    other, mig_mult = hz.assess(lat, lon, date, near_n)                                 # new hazards
+    mult *= mig_mult
     if is_real(zones):
         out = scoring.score(lat, lon, date, zones, weather_mult=mult,
                             weather_reasons=trend_reason + w_reasons)
     else:
         out = mock_score(lat, lon, zones)
-        out["reasons"] += w_reasons
         out.update(raptor_alert=None, nesting_until=None, base_risk=out["score"] / 100)
-    checks["wildlife"] = out["level"]
-    if RANK[w_min] > RANK[out["level"]]:          # weather can make it stricter, never looser
-        out["level"] = w_min
-        out["message"] = ("Don't fly: below FAA weather minimums" if w_min == "red"
-                          else "Wait: too windy or wet to fly safely")
-        # put the weather reasons that decided it first
-        out["reasons"] = w_reasons + [r for r in out["reasons"] if r not in w_reasons]
-    out["checks"] = checks                        # {"wildlife", "safety", "legal"}
+        out["reasons"] += w_reasons
+    bird_level, bird_score = out["level"], out["score"]
+    checks["wildlife"] = bird_level
+
+    # ---- the hazard breakdown (overall level = the worst hazard)
+    raptor = out.get("raptor_alert")
+    hazards = [{"type": "nesting", "level": bird_level,
+                "detail": next((r for r in out["reasons"] if "season" in r.lower()), f"Bird risk {bird_score}/100")},
+               {"type": "raptors",
+                "level": ("red" if raptor and "nesting season" in raptor else "yellow") if raptor else "green",
+                "detail": "Hawk or eagle sightings within 1 km" if raptor else "No hawks or eagles seen nearby"}]
+    hazards += other + weather.hazards(w)
+    known = [h for h in hazards if h["level"] in RANK]
+    worst = max(known, key=lambda h: RANK[h["level"]])
+    level = worst["level"]
+
+    # ---- score: bird risk + points for every other hazard, kept consistent with the level
+    score = bird_score + sum(POINTS.get(h["level"], 0) for h in known if h["type"] not in ("nesting",))
+    score = min(100, max(score, {"red": 60, "yellow": 30, "green": 0}[level]))
+    if level == "green":
+        score = min(score, 29)
+
+    # ---- reasons + message
+    extra = [h["detail"] for h in sorted(known, key=lambda h: -RANK[h["level"]])
+             if h["level"] != "green" and h["type"] not in ("nesting",) and h["detail"] not in out["reasons"]]
+    out["reasons"] = extra + [r for r in out["reasons"] if r not in extra]
+    if RANK[level] > RANK[bird_level]:
+        if worst["type"] in HAZARD_MESSAGE and level in HAZARD_MESSAGE[worst["type"]]:
+            out["message"] = HAZARD_MESSAGE[worst["type"]][level]
+        elif level == "red":
+            out["message"] = "Don't fly: below FAA weather minimums"
+        else:
+            out["message"] = "Wait: too windy or wet to fly safely"
+    out["level"], out["score"], out["bird_score"] = level, score, bird_score
+    out["hazards"] = hazards
+    out["checks"] = checks                        # {"wildlife", "safety", "legal"} (kept for the UI)
     try:
-        out["safer_spot"] = safer_spot(lat, lon, date, out["level"], w_min)
+        # only when the birds decide it: moving 2 km can't fix weather, and lines are mapped separately
+        out["safer_spot"] = safer_spot(lat, lon, date, bird_level, w_min) if bird_level == level else None
     except Exception as e:
         print("safer_spot failed:", e)
         out["safer_spot"] = None
@@ -231,6 +277,12 @@ def score_spot(lat, lon, date, explain_it=False):
         if tiger.enabled():
             tiger.log_check(*snap(lat, lon), out["level"], out["score"])   # blurred, app checks only
     return out
+
+
+@app.get("/powerlines")
+def powerlines(lat: float, lon: float, radius_km: float = 1):
+    """Power-line polylines near a point (OpenStreetMap, cached). Public data, exact geometry."""
+    return hz.powerlines(lat, lon, min(radius_km, 1.5))
 
 
 @app.get("/zones")

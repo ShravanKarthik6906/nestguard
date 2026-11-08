@@ -18,17 +18,16 @@ _cache = {}
 
 PROMPT = """Explain a drone pre-flight result to a hobby drone pilot in ONE or TWO short sentences (max 35 words).
 Start directly with the advice (no greeting, don't introduce yourself). Use only the facts below;
-do not invent species, numbers or places.
-Overall result: {label}
+do not invent species, numbers, distances or places.
+Overall result: {label} (risk score {score}/100)
 What caused it: {cause}
 {not_cause}
-Reasons (most important first): {reasons}
 Advice already shown: {message}
 """
 
-CAUSE = {"wildlife": "nesting birds and bird activity nearby (bird risk score {score}/100)",
-         "safety": "wind or rain that makes flying unsafe",
-         "legal": "FAA weather rules (visibility or cloud clearance)"}
+NAMES = {"nesting": "nesting birds", "raptors": "hawks or eagles", "powerlines": "power lines",
+         "migration": "bird migration", "crowd": "people below", "air": "air quality",
+         "wind": "wind", "rain": "rain", "visibility": "visibility", "clouds": "low clouds"}
 
 LABEL = {"green": "Go", "yellow": "Wait", "red": "Don't fly"}
 
@@ -45,26 +44,25 @@ def fallback(result):
 
 def why(result):
     key = (result["level"], result["score"], tuple(result.get("reasons", [])), result.get("message"),
-           tuple(sorted((result.get("checks") or {}).items())))
+           tuple((h.get("type"), h.get("level")) for h in result.get("hazards") or []))
     if key in _cache:
         return _cache[key]
     api_key = os.environ.get("GEMINI_API_KEY")
     text = None
     if api_key:
-        checks = result.get("checks") or {}
-        bad = [k for k in ("legal", "safety", "wildlife") if checks.get(k) in ("red", "yellow")]
+        hz = [h for h in result.get("hazards") or [] if h.get("level") in ("green", "yellow", "red")]
+        bad = sorted((h for h in hz if h["level"] in ("red", "yellow")),
+                     key=lambda h: 0 if h["level"] == "red" else 1)
         if result["level"] == "green" or not bad:
-            cause = "all checks passed (birds, weather and FAA rules are all fine)"
-            not_cause = "Say it is clear to fly; mention any caution in the reasons briefly."
+            cause = "all checks passed (birds, power lines, weather and FAA rules)"
+            not_cause = "Say it is clear to fly."
         else:
-            cause = "; ".join(CAUSE[k].format(score=result["score"]) for k in bad)
-            ok = [k for k in ("wildlife", "safety", "legal") if k not in bad and checks.get(k) == "green"]
-            names = {"wildlife": "birds", "safety": "wind or rain", "legal": "weather or FAA rules"}
+            cause = "; ".join(f"{h['detail']} ({h['level']})" for h in bad[:3])
+            ok = sorted({NAMES.get(h["type"], h["type"]) for h in hz if h["level"] == "green"})
             not_cause = ("These checks PASSED, so do NOT mention them as a reason: "
-                         + ", ".join(names[k] for k in ok) + ".") if ok else ""
-        prompt = PROMPT.format(label=LABEL[result["level"]], cause=cause, not_cause=not_cause,
-                               reasons="; ".join(result.get("reasons", [])) or "none",
-                               message=result.get("message", ""))
+                         + ", ".join(ok) + ".") if ok else ""
+        prompt = PROMPT.format(label=LABEL[result["level"]], score=result["score"], cause=cause,
+                               not_cause=not_cause, message=result.get("message", ""))
         for model in [MODEL] + [m for m in BACKUP_MODELS if m != MODEL]:
             for attempt in range(2):                 # one quick retry per model
                 try:

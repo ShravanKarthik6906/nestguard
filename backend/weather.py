@@ -153,3 +153,32 @@ def assess(w):
     rank = {"green": 0, "yellow": 1, "red": 2}
     minimum = max(checks.values(), key=lambda l: rank[l])
     return mult, reasons, minimum, checks
+
+
+def hazards(w):
+    """Weather as hazard entries for the /check breakdown (same rules as assess())."""
+    if not w:
+        return [{"type": "weather", "level": "unknown", "detail": "Weather unavailable for this date"}]
+    out = []
+    gust, wind80 = w.get("wind_gusts_10m"), w.get("wind_speed_80m")
+    if gust is not None or wind80 is not None:
+        windy = (gust or 0) >= GUST_MPH or (wind80 or 0) >= WIND80_MPH
+        parts = ([f"{gust:.0f} mph gusts"] if gust is not None else []) + \
+                ([f"{wind80:.0f} mph at drone height"] if wind80 is not None else [])
+        out.append({"type": "wind", "level": "yellow" if windy else "green", "detail": ", ".join(parts)})
+    rain, t = w.get("precipitation") or 0, w.get("temperature_2m")
+    out.append({"type": "rain", "level": "yellow" if rain >= HEAVY_RAIN_MM else "green",
+                "detail": "Heavy rain" if rain >= HEAVY_RAIN_MM else
+                ("Light rain" if rain >= RAIN_MM else "No rain") + (f", {t:.0f}F" if t is not None else "")})
+    vis = w.get("visibility")
+    if vis is not None:
+        out.append({"type": "visibility", "level": "red" if vis < MIN_VIS_M else "green",
+                    "detail": f"Visibility {vis / 1609:.1f} mi" + (" (legal minimum is 3 mi)" if vis < MIN_VIS_M else "")})
+    low, dew = w.get("cloud_cover_low"), w.get("dew_point_2m")
+    if low is not None and t is not None and dew is not None:
+        base = max(0, (t - dew) / 4.4 * 1000)
+        too_low = low >= 50 and base < MIN_CLOUD_BASE_FT
+        out.append({"type": "clouds", "level": "red" if too_low else "green",
+                    "detail": f"Cloud base about {base:.0f} ft" + (" (FAA needs 500 ft below clouds)" if too_low else "")
+                    if low >= 50 else f"Low clouds {low:.0f}%"})
+    return out
