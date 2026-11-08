@@ -18,7 +18,7 @@ body.pf {
 
 /* top bar: brand, where you are, connection status */
 .pf .topbar { display: flex; align-items: center; gap: 16px; padding: 12px 20px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: rgba(11, 14, 19, 0.92); backdrop-filter: blur(8px); z-index: 20; }
-.pf .brand { font-weight: 700; font-size: 17px; text-decoration: none; }
+.pf .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; text-decoration: none; }
 .pf .steps { display: flex; gap: 4px; margin: 0 auto; }
 .pf .step { display: flex; align-items: center; gap: 8px; background: none; border: 0; color: var(--muted); font: inherit; font-size: 14px; padding: 6px 12px; border-radius: var(--r); cursor: pointer; }
 .pf .step .n { font-family: 'B612 Mono', monospace; font-size: 12px; width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; }
@@ -397,3 +397,8 @@ body.pf > .map { display: none; }
 .pf.demo-mode #exp-safer, .pf.demo-mode .layers, .pf.demo-mode .legend { display: none; }
 .pf.demo-mode .side > #exp-score { grid-column: 1 / -1; }
 .pf.tour-intro .side > #exp-score { display: none; }   /* no score yet during the intro */
+
+/* logo: the drone mark plus KNOW FLY ZONE, with the silent K and W in amber (reads as "no fly zone") */
+.pf .logo-mark { display: block; width: 40px; height: 30px; flex: none; }
+.pf .logo-word { font-family: 'B612', system-ui, sans-serif; font-weight: 700; font-size: 16px; letter-spacing: 0.08em; color: #e8ebef; white-space: nowrap; }
+.pf .logo-word .silent { color: #d99a1e; }
