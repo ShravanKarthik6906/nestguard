@@ -1,5 +1,5 @@
 /* Landing page. Follows docs/design-rules.md. */
-:root { --bg: #0e1013; --panel: #14171b; --text: #e8ebef; --muted: #8a929d; --line: #23272d; --go: #2f9e5b; --wait: #d99a1e; --stop: #d64545; --r: 3px; color-scheme: dark; }
+:root { --bg: #05070c; --panel: #14171b; --text: #e8ebef; --muted: #8a929d; --line: #23272d; --go: #2f9e5b; --wait: #d99a1e; --stop: #d64545; --r: 3px; color-scheme: dark; }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 html, body { margin: 0; }
@@ -43,11 +43,16 @@ section.reveal > :not(.fly) { opacity: 0; transition: opacity 0.8s ease 0.4s; }
 section.reveal.in > :not(.fly) { opacity: 1; }
 /* letters fly into place */
 .w { display: inline-block; white-space: nowrap; }
-.fly .ch { display: inline-block; opacity: 0; filter: blur(6px);
-  transform: translate(var(--dx), var(--dy)) rotate(var(--r)) scale(0.6);
-  transition: opacity 0.45s ease, transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), filter 0.45s ease;
-  transition-delay: calc(var(--i) * var(--step)); }
-.fly.in .ch { opacity: 1; filter: none; transform: none; }
+.fly .ch { display: inline-block; opacity: 0; }
+.fly.in .ch { animation: chfly 0.85s cubic-bezier(0.25, 0.8, 0.25, 1) both; animation-delay: calc(var(--i) * var(--step)); }
+/* like the drone parts, but shorter: curved flight with a winding-down spin, a pause above the slot, then lock in */
+@keyframes chfly {
+  0%   { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--r)) scale(0.55); text-shadow: 0 0 10px rgba(214, 230, 255, 0.9); }
+  15%  { opacity: 1; }
+  60%  { transform: translate(var(--cx), var(--cy)) rotate(calc(var(--r) * -0.12)) scale(1.06); text-shadow: 0 0 8px rgba(214, 230, 255, 0.75); }
+  82%  { transform: translate(0, -4px) rotate(0deg) scale(1.03); text-shadow: 0 0 6px rgba(214, 230, 255, 0.6); }
+  100% { opacity: 1; transform: none; text-shadow: 0 0 0 rgba(214, 230, 255, 0); }
+}
 .label { display: block; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
 h2 { font-size: clamp(28px, 3.8vw, 42px); line-height: 1.15; margin: 0 0 22px; }
 section p { font-size: 18px; line-height: 1.7; margin: 0 0 18px; }
@@ -82,7 +87,7 @@ section p { font-size: 18px; line-height: 1.7; margin: 0 0 18px; }
 @media (hover: none), (pointer: coarse) { .prop-cursor { display: none; } }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.lfoot { position: relative; z-index: 1; background: var(--bg);  display: flex; flex-wrap: wrap; gap: 20px; padding: 24px 28px; border-top: 1px solid var(--line); font-size: 13px; }
+.lfoot { position: relative; z-index: 1; background: transparent;  display: flex; flex-wrap: wrap; gap: 20px; padding: 24px 28px; border-top: 1px solid var(--line); font-size: 13px; }
 .lfoot a { color: var(--muted); text-decoration: none; }
 .lfoot a:hover { color: var(--text); }
 .lfoot span { margin-left: auto; color: var(--muted); }

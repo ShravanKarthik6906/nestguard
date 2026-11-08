@@ -27,8 +27,66 @@ scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnviron
 scene.environmentIntensity = 0.45
 
 const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100)
+scene.add(camera) // the night sky is attached to the camera, so it always fills the screen
 camera.position.set(0, 3.3, 8.4)
 camera.lookAt(0, -0.75, 0)
+
+// ---------- realistic night sky (screen-aligned): navy gradient, faint Milky Way, warm horizon, stars
+const NOISE = `
+  float h3(vec3 p){ p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+  float n3(vec3 x){ vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(mix(h3(i), h3(i + vec3(1,0,0)), f.x), mix(h3(i + vec3(0,1,0)), h3(i + vec3(1,1,0)), f.x), f.y),
+               mix(mix(h3(i + vec3(0,0,1)), h3(i + vec3(1,0,1)), f.x), mix(h3(i + vec3(0,1,1)), h3(i + vec3(1,1,1)), f.x), f.y), f.z); }
+  float fbm(vec3 p){ float v = 0.0, a = 0.5; for (int i = 0; i < 5; i++) { v += a * n3(p); p *= 2.03; a *= 0.5; } return v; }`
+const BAND = new THREE.Vector3(0.42, 0.8, 0.43).normalize() // the Milky Way crosses the screen diagonally
+const skyU = { uTime: { value: 0 }, uBand: { value: BAND } }
+const sky = new THREE.Mesh(new THREE.SphereGeometry(40, 48, 24), new THREE.ShaderMaterial({
+  side: THREE.BackSide, depthWrite: false, uniforms: skyU,
+  vertexShader: `varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+  fragmentShader: NOISE + `
+    uniform vec3 uBand; varying vec3 vDir;
+    void main(){
+      vec3 d = normalize(vDir);
+      float h = clamp(d.y * 0.9 + 0.5, 0.0, 1.0);                       // 0 = bottom of the screen, 1 = top
+      vec3 col = mix(vec3(0.075, 0.095, 0.135), vec3(0.018, 0.026, 0.05), smoothstep(0.15, 0.85, h)); // sRGB
+      float b = dot(d, uBand); float band = exp(-b * b * 22.0);
+      float glow = fbm(d * 5.0 + 1.7), dust = fbm(d * 13.0 + 4.1);
+      col += vec3(0.15, 0.155, 0.175) * band * (0.25 + 0.75 * glow) * (1.0 - 0.75 * smoothstep(0.48, 0.66, dust));
+      col += vec3(0.07, 0.05, 0.03) * smoothstep(0.32, 0.0, h);          // faint warm light from distant towns
+      gl_FragColor = vec4(pow(col, vec3(2.2)), 1.0);                       // to linear; the output pass converts back
+    }`,
+}))
+sky.renderOrder = -2
+camera.add(sky)
+
+{ // stars: many faint, a few bright, denser along the Milky Way, slight colour variation, gentle twinkle
+  const N = 3500, pos = new Float32Array(N * 3), col = new Float32Array(N * 3), size = new Float32Array(N), phase = new Float32Array(N)
+  const v = new THREE.Vector3(); let r = 7
+  const rand = () => (r = (r * 16807) % 2147483647) / 2147483647
+  for (let i = 0; i < N; i++) {
+    do { v.set(rand() * 2 - 1, rand() * 2 - 1, -rand()).normalize() } while (i % 3 === 0 && Math.abs(v.dot(BAND)) > 0.18) // a third hug the band
+    v.multiplyScalar(36); pos.set([v.x, v.y, v.z], i * 3)
+    const m = Math.pow(rand(), 3.2)                       // magnitude: mostly faint
+    const t = rand(), c = t < 0.15 ? [1.0, 0.86, 0.72] : t < 0.55 ? [0.82, 0.88, 1.0] : [1, 1, 1]
+    const k = 0.18 + m * 1.6; col.set([c[0] * k, c[1] * k, c[2] * k], i * 3)
+    size[i] = 0.9 + m * 2.6; phase[i] = rand() * 6.283
+  }
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3))
+  g.setAttribute('aSize', new THREE.BufferAttribute(size, 1)); g.setAttribute('aPhase', new THREE.BufferAttribute(phase, 1))
+  const stars = new THREE.Points(g, new THREE.ShaderMaterial({
+    uniforms: { uTime: skyU.uTime, uPR: { value: renderer.getPixelRatio() } },
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, vertexColors: true,
+    vertexShader: `attribute float aSize; attribute float aPhase; uniform float uTime; uniform float uPR; varying vec3 vC; varying float vTw;
+      void main(){ vC = color; vTw = 0.78 + 0.22 * sin(uTime * (1.3 + aPhase * 0.4) + aPhase * 5.0);
+        gl_PointSize = aSize * uPR; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: `varying vec3 vC; varying float vTw;
+      void main(){ float d = length(gl_PointCoord - 0.5); float a = smoothstep(0.5, 0.0, d); gl_FragColor = vec4(vC * a * a * vTw, 1.0); }`,
+  }))
+  stars.renderOrder = -1
+  stars.frustumCulled = false
+  camera.add(stars)
+}
 
 const key = new THREE.DirectionalLight(0xffffff, 2.6); key.position.set(2.5, 9, 4); key.castShadow = true
 key.shadow.mapSize.set(2048, 2048); Object.assign(key.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4 }); key.shadow.radius = 5
@@ -316,6 +374,7 @@ const pointer = { x: 0, y: 0 }
 const TRAIL_PTS = 20, TRAIL_TIME = 0.22
 const tp = new THREE.Vector3(), tq = new THREE.Quaternion()
 function renderAt(t) {
+  skyU.uTime.value = t
   if (!capture) updateFollow(t)
   for (const part of parts) {
     const { obj } = part, u = obj.userData

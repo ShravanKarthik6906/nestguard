@@ -57,7 +57,12 @@ function splitLetters(el) {
             const c = document.createElement('span')
             c.className = 'ch'
             c.textContent = ch
-            c.style.cssText = `--dx:${rnd(60).toFixed(0)}px;--dy:${(rnd(40) + 30).toFixed(0)}px;--r:${rnd(70).toFixed(0)}deg;--i:${count++}`
+            // curved approach like the drone parts: start off to one side, swing through a bent midpoint, spin down, lock in
+            const a = Math.random() * Math.PI * 2, dist = 90 + Math.random() * 110, side = Math.random() < 0.5 ? -1 : 1
+            const dx = Math.cos(a) * dist, dy = Math.sin(a) * dist
+            const cx = dx * 0.35 - Math.sin(a) * side * dist * 0.45, cy = dy * 0.35 + Math.cos(a) * side * dist * 0.45
+            c.style.cssText = `--dx:${dx.toFixed(0)}px;--dy:${dy.toFixed(0)}px;--cx:${cx.toFixed(0)}px;--cy:${cy.toFixed(0)}px;` +
+              `--r:${(side * (90 + Math.random() * 200)).toFixed(0)}deg;--i:${count++}`
             word.append(c)
           }
           frag.append(word)
@@ -75,7 +80,7 @@ if (!reduceMotion) {
   for (const b of blocks) {
     const n = splitLetters(b)
     b.classList.add('fly')
-    b.style.setProperty('--step', `${Math.min(8, 650 / Math.max(1, n)).toFixed(2)}ms`) // whole block in well under a second
+    b.style.setProperty('--step', `${Math.min(10, 700 / Math.max(1, n)).toFixed(2)}ms`) // a whole block lands in about 1.5 s
   }
 }
 const seen = new IntersectionObserver((entries) => {
