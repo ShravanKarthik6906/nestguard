@@ -139,6 +139,8 @@ dd { margin: 0; text-align: right; }
 
 /* Leaflet on dark */
 .leaflet-container { background: #0b0d10; font-family: 'B612', sans-serif; }
+/* darken the light OSM tiles only; zones and power lines keep their real colors */
+.leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.35); }
 #map .leaflet-bar { border: 1px solid var(--line); border-radius: var(--r); }
 #map .leaflet-bar a { background: var(--panel); color: var(--text); border-color: var(--line); border-radius: 0; }
 #map .leaflet-bar a:hover { background: var(--line); }
