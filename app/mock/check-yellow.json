@@ -1,7 +1,6 @@
 {
- "level": "yellow",
- "score": 55,
- "message": "Birds nearby, keep at least 100 m away",
+ "score": 45,
+ "message": "Risk 45/100: Birds nearby, keep at least 100 m away",
  "reasons": [
   "Nesting season for raptor birds",
   "6 recent sightings within 1 km"
@@ -9,11 +8,6 @@
  "zones": [],
  "best_time": "Tomorrow 10 AM to 1 PM",
  "raptor_alert": null,
- "checks": {
-  "wildlife": "yellow",
-  "safety": "green",
-  "legal": "green"
- },
  "hazards": [
   {
    "type": "nesting",
@@ -56,5 +50,6 @@
    "detail": "Air quality index 28"
   }
  ],
- "bird_score": 55
+ "bird_score": 55,
+ "safer_spot": null
 }

@@ -1,12 +1,7 @@
 import { sortHazards, hazardRow } from './hazards.js'
+import { band, mainDriver } from './risk.js'
 
 const $ = (id) => document.getElementById(id)
-const LABELS = { green: 'Go', yellow: 'Wait', red: "Don't fly" }
-const CHECKS = [['safety', 'Drone safety'], ['legal', 'FAA legal'], ['wildlife', 'Wildlife']]
-const STATES = { green: 'Clear', yellow: 'Caution', red: 'Fail' }
-
-// The banner already says the verdict, so drop a repeated "Don't fly:" or "Wait:" from the message.
-const cleanMessage = (m = '') => m.replace(/^(don't fly|wait|go)\s*[:.,-]\s*/i, '').replace(/^./, (c) => c.toUpperCase())
 
 export function showLoading() {
   const b = $('banner')
@@ -19,22 +14,19 @@ function items(list, make) {
 }
 
 export function showCheck(r) {
-  const level = LABELS[r.level] ? r.level : 'yellow'
-  $('banner').className = 'verdict ' + level
-  $('banner').textContent = LABELS[level]
-  $('message').textContent = cleanMessage(r.message)
-  $('score').textContent = r.score ?? 'Not available'
+  // the score is the headline: "Risk 49 / 100", coloured by band (>= 60 high, >= 30 medium)
+  const bd = band(r.score)
+  $('banner').className = 'verdict score ' + bd.cls
+  $('banner').innerHTML = '<span class="risk-label">Risk</span> <span class="risk-num"></span><span class="risk-of">/100</span> <span class="risk-band"></span>'
+  $('banner').querySelector('.risk-num').textContent = Number.isFinite(Number(r.score)) ? Math.round(r.score) : 'Not available'
+  $('banner').querySelector('.risk-band').textContent = bd.cls === 'none' ? '' : `${bd.word} risk`
+  $('message').textContent = mainDriver(r.message)
   $('bird-row').hidden = typeof r.bird_score !== 'number'
   $('bird-score').textContent = r.bird_score ?? ''
   $('best-time').textContent = r.best_time || 'Not available'
-
-  $('checks').replaceChildren(...items(r.checks ? CHECKS : [], (li, [key, name]) => {
-    const lvl = r.checks[key]
-    li.innerHTML = '<span></span><span class="state"></span>'
-    li.firstChild.textContent = name
-    li.lastChild.textContent = STATES[lvl] || 'Not available'
-    li.lastChild.classList.add(lvl || 'none')
-  }))
+  const sp = r.safer_spot
+  $('safer-row').hidden = !sp
+  $('safer').textContent = sp ? (sp.label || `${sp.distance_km} km ${sp.direction}: risk ${sp.score}`) : ''
 
   $('raptor').hidden = !r.raptor_alert
   $('raptor-text').textContent = r.raptor_alert || ''
@@ -57,10 +49,9 @@ export function showCheckError(msg) {
   $('banner').className = 'verdict none'
   $('banner').textContent = 'No result'
   $('message').textContent = msg
-  $('score').textContent = 'Not available'
   $('bird-row').hidden = true
+  $('safer-row').hidden = true
   $('best-time').textContent = 'Not available'
-  $('checks').replaceChildren()
   $('raptor').hidden = true
   $('reasons').replaceChildren()
   $('hazards').replaceChildren()

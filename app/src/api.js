@@ -1,4 +1,5 @@
 import { USE_MOCK, TIMEOUT_MS } from './config.js'
+import { riskOf } from './risk.js'
 import mockZones from '../mock/zones.json'
 import mockGreen from '../mock/check-green.json'
 import mockYellow from '../mock/check-yellow.json'
@@ -72,7 +73,7 @@ function mockCheck(lat, lon, date) {
   const d = (z) => distM(lat, lon, z.lat, z.lon)
   let r = mockGreen
   if (powerDistM(lat, lon) <= 100) r = mockPower
-  else if (zones.some((z) => z.level === 'red' && d(z) <= z.radius_m)) r = lat < 35 ? mockBolsa : mockRed
+  else if (zones.some((z) => riskOf(z) >= 60 && d(z) <= z.radius_m)) r = lat < 35 ? mockBolsa : mockRed
   else if (zones.some((z) => d(z) <= z.radius_m + 300)) r = mockYellow
   else if (distM(lat, lon, 42.7302, -73.6788) <= 1500 && migrationSeason(date)) r = mockMigration
   return { ...r, zones }
@@ -119,9 +120,9 @@ export async function getPowerlines(lat, lon, radiusKm) {
   return getJSON(`/powerlines?lat=${r4(lat)}&lon=${r4(lon)}&radius_km=${radiusKm}`, 15000)
 }
 
-// Checks per hour and level over the last 24 h (Tiger Data). Never cached.
+// Checks per hour with average and highest risk over the last 24 h (Tiger Data). Never cached.
 export async function getStats() {
-  if (USE_MOCK) return [{ hour: 'mock', level: 'green', checks: 9 }, { hour: 'mock', level: 'red', checks: 3 }]
+  if (USE_MOCK) return [{ hour: 'mock', checks: 9, avg_risk: 28, max_risk: 61 }, { hour: 'mock', checks: 3, avg_risk: 52, max_risk: 95 }]
   const res = await fetch('/stats/checks?hours=24', { cache: 'no-store', signal: AbortSignal.timeout(TIMEOUT_MS) })
   if (!res.ok) throw new Error('HTTP ' + res.status)
   const rows = await res.json()

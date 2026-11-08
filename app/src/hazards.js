@@ -15,11 +15,11 @@ export const NAMES = {
   nesting: 'Nesting', raptors: 'Raptors', powerlines: 'Power lines', crowd: 'People below', migration: 'Migration',
   air: 'Air quality', wind: 'Wind', rain: 'Rain', visibility: 'Visibility', clouds: 'Cloud base',
 }
-const RANK = { red: 0, yellow: 1, green: 2 }
+const RANK = { red: 0, yellow: 1, green: 2, unknown: 3 }
 // When two hazards have the same color, the more immediate danger to the drone comes first.
 const ORDER = ['powerlines', 'raptors', 'wind', 'clouds', 'visibility', 'rain', 'nesting', 'crowd', 'migration', 'air']
 
-// Worst first; "unknown" (a data source is down) is left out.
+// Worst first; "unknown" (no data for this area, or a source is down) goes last as a grey row.
 export function sortHazards(list) {
   return (Array.isArray(list) ? list : [])
     .filter((h) => h && RANK[h.level] !== undefined)
@@ -32,6 +32,6 @@ export function hazardRow(h) {
   li.innerHTML = `<svg class="glyph" viewBox="0 0 16 16" aria-hidden="true">${G[h.type] || '<circle cx="8" cy="8" r="5"/>'}</svg>
     <span class="name"></span><span class="detail"></span><i class="dot ${h.level}" title="${h.level}"></i>`
   li.querySelector('.name').textContent = NAMES[h.type] || h.type
-  li.querySelector('.detail').textContent = h.detail || ''
+  li.querySelector('.detail').textContent = h.level === 'unknown' ? 'No data here' : h.detail || ''
   return li
 }

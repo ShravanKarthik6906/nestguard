@@ -3,15 +3,9 @@
  "zones": [],
  "best_time": null,
  "raptor_alert": null,
- "checks": {
-  "safety": "green",
-  "legal": "green",
-  "wildlife": "green"
- },
- "level": "green",
  "score": 12,
  "bird_score": 12,
- "message": "Clear to fly",
+ "message": "Risk 12/100: Clear to fly",
  "hazards": [
   {
    "type": "nesting",
@@ -63,5 +57,6 @@
    "level": "green",
    "detail": "Air quality index 28"
   }
- ]
+ ],
+ "safer_spot": null
 }

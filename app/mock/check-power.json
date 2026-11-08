@@ -6,15 +6,9 @@
  "zones": [],
  "best_time": null,
  "raptor_alert": "Hawks or eagles seen within 1 km. They sometimes chase drones, so keep an eye on the sky and land if one comes close.",
- "checks": {
-  "safety": "green",
-  "legal": "green",
-  "wildlife": "red"
- },
- "level": "red",
  "score": 95,
  "bird_score": 55,
- "message": "Don't fly: power line too close",
+ "message": "Risk 95/100: Power line too close",
  "hazards": [
   {
    "type": "powerlines",
@@ -66,5 +60,6 @@
    "level": "green",
    "detail": "Air quality index 28"
   }
- ]
+ ],
+ "safer_spot": null
 }

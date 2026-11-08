@@ -12,6 +12,7 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; }
 body {
   background: var(--bg);
@@ -184,3 +185,13 @@ dd { margin: 0; text-align: right; }
 .hazard:has(.dot.red) .glyph { stroke: var(--stop); }
 .hazard:has(.dot.red) .name { color: var(--stop); }
 @media (max-width: 600px) { .hazard { grid-template-columns: 18px 1fr 10px; } .hazard .detail { grid-column: 2; } .hazard .name { grid-column: 2; } .dot { grid-row: 1; grid-column: 3; } }
+
+/* score banner: "Risk 49/100 Medium risk" */
+.verdict.score { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; }
+.verdict .risk-label { font-family: 'B612 Mono', monospace; font-size: 0.32em; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.85; }
+.verdict .risk-num { font-size: 1.15em; line-height: 1; }
+.verdict .risk-of { font-size: 0.4em; opacity: 0.8; margin-left: -6px; }
+.verdict .risk-band { font-size: 0.42em; font-weight: 700; margin-left: auto; }
+.verdict.none { color: var(--muted); }
+.dot.unknown { background: transparent; border: 1px solid var(--muted); }
+.hazard:has(.dot.unknown) .detail { color: var(--muted); }

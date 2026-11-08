@@ -1,6 +1,26 @@
 [
-  {"lat": 42.735, "lon": -73.675, "radius_m": 700, "level": "red"},
-  {"lat": 42.725, "lon": -73.695, "radius_m": 300, "level": "yellow"},
-  {"lat": 33.715, "lon": -118.025, "radius_m": 800, "level": "yellow"},
-  {"lat": 33.705, "lon": -118.045, "radius_m": 1000, "level": "red"}
+ {
+  "lat": 42.735,
+  "lon": -73.675,
+  "radius_m": 700,
+  "risk": 80
+ },
+ {
+  "lat": 42.725,
+  "lon": -73.695,
+  "radius_m": 300,
+  "risk": 45
+ },
+ {
+  "lat": 33.715,
+  "lon": -118.025,
+  "radius_m": 800,
+  "risk": 45
+ },
+ {
+  "lat": 33.705,
+  "lon": -118.045,
+  "radius_m": 1000,
+  "risk": 80
+ }
 ]

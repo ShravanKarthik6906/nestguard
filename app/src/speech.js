@@ -1,12 +1,11 @@
 import { USE_MOCK } from './config.js'
-import { sortHazards } from './hazards.js'
+import { band, mainDriver } from './risk.js'
 
-// Speaks the check result out loud when the level changes.
+// Speaks the check result out loud: "Risk N. <main driver>".
 // Order: pre-generated clip (offline, free) -> /speak (Fish Audio via our backend)
-// -> generic clip for the level. The browser never sees the Fish Audio key.
+// -> generic clip for the risk band. The browser never sees the Fish Audio key.
 
-const LABELS = { green: 'Go', yellow: 'Wait', red: "Don't fly" }
-const FALLBACK = { green: 'Go. Clear to fly.', yellow: 'Wait. Check the warnings before you fly.', red: "Don't fly." }
+const FALLBACK = { green: 'Low risk.', yellow: 'Medium risk.', red: 'High risk.' }
 
 const audio = new Audio()
 const urls = new Map() // spoken text -> playable URL
@@ -25,14 +24,15 @@ function unlock() {
 }
 window.addEventListener('pointerdown', unlock)
 
-// Same rule as backend/make_clips.py: say the level first unless the message already does.
-// If a hazard is red, speak the worst red hazard's detail instead, e.g. "Don't fly. Power line 40 meters away."
-const units = (t) => t.replace(/(\d)\s?m\b/g, '$1 meters').replace(/(\d)\s?km\b/g, '$1 kilometers').replace(/(\d)\s?ft\b/g, '$1 feet')
-export function spokenText(level, message, hazards) {
-  const label = LABELS[level] || 'Wait'
-  const red = sortHazards(hazards).find((h) => h.level === 'red' && h.detail)
-  const m = units((red ? red.detail : message || '').trim().replace(/[.]$/, ''))
-  return m.toLowerCase().startsWith(label.toLowerCase()) ? m : `${label}. ${m}`.trim()
+// Same rule as backend/make_clips.py: "Risk N. <main driver>", with units spelled out for the voice.
+const units = (t) => t
+  .replace(/\b1\s?km\b/g, '1 kilometer').replace(/(\d)\s?km\b/g, '$1 kilometers')
+  .replace(/\b1\s?m\b/g, '1 meter').replace(/(\d)\s?m\b/g, '$1 meters')
+  .replace(/\b1\s?ft\b/g, '1 foot').replace(/(\d)\s?ft\b/g, '$1 feet')
+export function spokenText(score, message) {
+  const n = Number.isFinite(Number(score)) ? Math.round(score) : null
+  const driver = units(mainDriver(message).trim().replace(/[.]$/, ''))
+  return n === null ? driver : `Risk ${n}. ${driver}`.trim()
 }
 
 async function urlFor(text) {
@@ -57,18 +57,19 @@ async function play(url) {
   await audio.play()
 }
 
-// force: always speak (someone tapped something). Otherwise only when the level changes (demo walk).
+// force: always speak (someone tapped something). Otherwise only when the risk band changes (demo walk).
 export async function announce(result, { force = false } = {}) {
-  if (!result || (!force && result.level === lastLevel)) return
-  lastLevel = result.level
+  const bd = band(result && result.score).cls
+  if (!result || (!force && bd === lastLevel)) return
+  lastLevel = bd
   const id = ++speakId
-  const text = spokenText(result.level, result.message, result.hazards)
+  const text = spokenText(result.score, result.message)
   try {
     const url = await urlFor(text)
     if (!url) throw new Error('no clip')
     if (id === speakId) await play(url)
   } catch (err) {
-    const name = clips[FALLBACK[result.level]]
+    const name = clips[FALLBACK[bd]]
     if (name && id === speakId) play('/audio/' + name).catch(() => {})
     console.warn('speech:', err.message)
   }
