@@ -21,9 +21,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import explain
 import scoring
+import tiger
 import weather
 
 app = FastAPI(title="NestGuard API")
+
+if tiger.enabled():                     # Tiger Data hypertables (time series); optional
+    import threading
+    threading.Thread(target=lambda: print("Tiger Data ready" if tiger.setup() else "Tiger Data unavailable"),
+                     daemon=True).start()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 try:                                   # load backend/.env (MONGODB_URI, keys)
@@ -187,8 +193,14 @@ def safer_spot(lat, lon, date, level, weather_min):
 def score_spot(lat, lon, date, explain_it=False):
     zones = get_zones(lat, lon, 5)
     mult, w_reasons, w_min, checks = weather.assess(weather.conditions(lat, lon, date))  # U5/U6
+    trend = tiger.trend(lat, lon, date) if tiger.enabled() else None                    # Tiger Data
+    trend_reason = []
+    if trend and trend["ratio"] and trend["ratio"] >= 2 and trend["recent"] >= 5:
+        mult *= 1.15
+        trend_reason = [f"Sightings up {trend['ratio']:g}x in the last 2 weeks"]
     if is_real(zones):
-        out = scoring.score(lat, lon, date, zones, weather_mult=mult, weather_reasons=w_reasons)
+        out = scoring.score(lat, lon, date, zones, weather_mult=mult,
+                            weather_reasons=trend_reason + w_reasons)
     else:
         out = mock_score(lat, lon, zones)
         out["reasons"] += w_reasons
@@ -213,8 +225,11 @@ def score_spot(lat, lon, date, explain_it=False):
         out["best_time"] = None
     out.pop("base_risk", None)
     out.pop("nesting_until", None)
+    out["trend"] = trend                          # Tiger Data: weekly sightings near here
     if explain_it:
         out["why"] = explain.why(out)             # U9: Gemini, only when the app asks
+        if tiger.enabled():
+            tiger.log_check(*snap(lat, lon), out["level"], out["score"])   # blurred, app checks only
     return out
 
 
@@ -252,7 +267,27 @@ def set_demo(body: dict = Body(...)):
 @app.post("/device/telemetry")
 def post_telemetry(body: dict = Body(...)):
     device["telemetry"] = body
+    if tiger.enabled():
+        tiger.log_telemetry(body.get("temp_c"), body.get("light_pct"))   # Tiger Data hypertable
     return {"ok": True}
+
+
+@app.get("/device/telemetry/history")
+def telemetry_history(minutes: int = 60, bucket_s: int = 60):
+    """Device readings over time from Tiger Data (time_bucket averages)."""
+    return tiger.telemetry_history(minutes, bucket_s)
+
+
+@app.get("/trend")
+def trend(lat: float, lon: float, date: datetime.date = Query(default_factory=datetime.date.today)):
+    """Weekly sightings near a point (blurred cells), from Tiger Data."""
+    return tiger.trend(lat, lon, date) or {"weekly": [], "recent": 0, "before": 0, "ratio": None}
+
+
+@app.get("/stats/checks")
+def check_stats(hours: int = 24):
+    """How many pre-flight checks said Go / Wait / Don't fly per hour (Tiger Data)."""
+    return tiger.check_stats(hours)
 
 
 @app.get("/device/telemetry")
