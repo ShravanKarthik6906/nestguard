@@ -68,19 +68,22 @@ if (!reduceMotion) {
   for (const b of blocks) {
     const n = splitWords(b)
     b.classList.add('fly')
-    b.style.setProperty('--step', `${Math.min(28, 600 / Math.max(1, n)).toFixed(1)}ms`) // a whole block lands in under a second
+    b.style.setProperty('--step', `${Math.min(45, 950 / Math.max(1, n)).toFixed(1)}ms`) // words sweep in over about a second
   }
 }
+// Each heading, paragraph and drawing starts its whoosh on its own, once it is a third of the way up the
+// screen, so the motion is seen instead of finishing before it scrolls into view.
 const seen = new IntersectionObserver((entries) => {
   for (const e of entries) {
     if (!e.isIntersecting) continue
-    // headings start first, then each paragraph of the section in turn
-    ;[...e.target.querySelectorAll('.fly')].forEach((b, i) => setTimeout(() => b.classList.add('in'), i * 140))
     e.target.classList.add('in')
     seen.unobserve(e.target)
   }
-}, { threshold: 0.12 })
-document.querySelectorAll('.info section').forEach((s) => { s.classList.add('reveal'); seen.observe(s) })
+}, { rootMargin: '0px 0px -30% 0px', threshold: 0 })
+document.querySelectorAll('.info section').forEach((sec) => {
+  sec.classList.add('reveal')
+  for (const el of sec.children) seen.observe(el)
+})
 
 // ---- below the hero, the mouse cursor becomes a spinning propeller (mouse and trackpad only)
 const hero = document.getElementById('hero')

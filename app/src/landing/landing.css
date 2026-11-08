@@ -48,15 +48,15 @@ h1 { font-size: clamp(34px, 5.5vw, 62px); line-height: 1.08; margin: 0 0 10px; }
 }
 section { padding: 56px 0; }
 /* non-text parts of a section (hazard list, buttons) simply fade in */
-section.reveal > :not(.fly):not(svg):not(ol):not(.pv) { opacity: 0; transition: opacity 0.8s ease 0.4s; }
-section.reveal.in > :not(.fly):not(svg):not(ol):not(.pv) { opacity: 1; }
+section.reveal > :not(.fly):not(svg):not(ol):not(.pv) { opacity: 0; transform: translate(var(--fx, 0), var(--fy, 40px)); transition: opacity 0.8s ease, transform 0.9s cubic-bezier(0.22, 0.9, 0.3, 1); }
+section.reveal > .in:not(.fly) { opacity: 1; transform: none; }
 /* words whoosh into place from the section's direction, with a short streak pointing back where they came from */
 .w { display: inline-block; white-space: nowrap; }
 .fly .w { position: relative; opacity: 0; }
-.fly.in .w { animation: whoosh 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: calc(var(--i) * var(--step)); }
-.fly .w::after { content: ''; position: absolute; left: var(--ax, 100%); top: var(--ay, 52%); height: 1px; width: 46px; pointer-events: none;
-  background: linear-gradient(to right, rgba(214, 230, 255, 0.5), rgba(214, 230, 255, 0)); transform-origin: left center; opacity: 0; }
-.fly.in .w::after { animation: streak 0.6s ease-out both; animation-delay: calc(var(--i) * var(--step)); }
+.fly.in .w { animation: whoosh 0.9s cubic-bezier(0.22, 0.9, 0.3, 1) both; animation-delay: calc(var(--i) * var(--step)); }
+.fly .w::after { content: ''; position: absolute; left: var(--ax, 100%); top: var(--ay, 52%); height: 1.5px; width: 90px; pointer-events: none;
+  background: linear-gradient(to right, rgba(214, 230, 255, 0.75), rgba(214, 230, 255, 0)); transform-origin: left center; opacity: 0; }
+.fly.in .w::after { animation: streak 0.9s ease-out both; animation-delay: calc(var(--i) * var(--step)); }
 /* start offset (--fx, --fy), streak anchor (--ax, --ay) and streak angle (--rot) for each direction */
 .dir-r  { --fx: 180px;  --fy: 0px;    --ax: 100%; --ay: 52%;  --rot: 0deg; }
 .dir-l  { --fx: -180px; --fy: 0px;    --ax: 0%;   --ay: 52%;  --rot: 180deg; }
@@ -65,14 +65,14 @@ section.reveal.in > :not(.fly):not(svg):not(ol):not(.pv) { opacity: 1; }
 .dir-ur { --fx: 150px;  --fy: 90px;   --ax: 100%; --ay: 100%; --rot: 31deg; }
 .dir-ul { --fx: -150px; --fy: -90px;  --ax: 0%;   --ay: 0%;   --rot: -149deg; }
 @keyframes whoosh {
-  0%   { opacity: 0; transform: translate(var(--fx), var(--fy)); }
-  20%  { opacity: 1; }
-  75%  { transform: translate(calc(var(--fx) * -0.03), calc(var(--fy) * -0.05)); }
+  0%   { opacity: 0; transform: translate(calc(var(--fx) * 2.2), calc(var(--fy) * 2.2)); }
+  12%  { opacity: 1; }
+  80%  { transform: translate(calc(var(--fx) * -0.03), calc(var(--fy) * -0.05)); }
   100% { opacity: 1; transform: none; }
 }
 @keyframes streak {
-  0%   { opacity: 0.9;  transform: rotate(var(--rot)) scaleX(1.6); }
-  55%  { opacity: 0.25; transform: rotate(var(--rot)) scaleX(0.3); }
+  0%   { opacity: 0.95; transform: rotate(var(--rot)) scaleX(2.2); }
+  60%  { opacity: 0.35; transform: rotate(var(--rot)) scaleX(0.5); }
   100% { opacity: 0;    transform: rotate(var(--rot)) scaleX(0); }
 }
 .label { display: block; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
@@ -123,12 +123,12 @@ section p { font-size: 18px; line-height: 1.7; margin: 0 0 18px; }
 
 /* ---------- visuals (thin custom line drawings; each piece whooshes in from its own direction) */
 .wv { opacity: 0; }
-section.in .wv { animation: whoosh 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: calc(0.25s + var(--i) * 0.12s); }
+.in .wv { animation: whoosh 1s cubic-bezier(0.22, 0.9, 0.3, 1) both; animation-delay: calc(0.1s + var(--i) * 0.14s); }
 svg .wv { transform-box: fill-box; }
 .radar { width: 100%; max-width: 760px; height: auto; display: block; margin: 8px 0 18px; overflow: visible; }
 .radar .rings circle { fill: none; stroke: var(--line); stroke-dasharray: 3 5; }
 .radar .ray { stroke-width: 1; stroke-dasharray: 4 6; opacity: 0; }
-section.in .radar .ray { animation: ray 0.9s ease 1.1s both; }
+.radar.in .ray { animation: ray 0.9s ease 1.3s both; }
 @keyframes ray { from { opacity: 0; stroke-dashoffset: 60; } to { opacity: 0.55; stroke-dashoffset: 0; } }
 .radar .hg { fill: none; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
 .radar text { fill: var(--text); font-family: 'B612 Mono', monospace; font-size: 14px; letter-spacing: 0.03em; }
@@ -150,7 +150,7 @@ section.in .radar .ray { animation: ray 0.9s ease 1.1s both; }
 .device-art .lcdt { fill: #b9e27a; font-family: 'B612 Mono', monospace; font-size: 15px; letter-spacing: 0.08em; }
 .device-art .led-red { fill: #d64545; } .device-art .led-off { fill: #2a3a2e; }
 .device-art .tag { fill: #8a929d; font-family: 'B612 Mono', monospace; font-size: 11px; }
-section.in .device-art .lcdt { animation: blink 1.2s steps(1) 1.4s 3; }
+.device-art.in .lcdt { animation: blink 1.2s steps(1) 1.4s 3; }
 @keyframes blink { 50% { opacity: 0.2; } }
 .pv { display: flex; gap: 28px; margin: 8px 0 14px; }
 .pv figure { margin: 0; flex: 1; max-width: 240px; }
