@@ -1,0 +1,803 @@
+
+:root {
+  font-family: 'B612', system-ui, sans-serif;
+  color: #e8ebef;
+  background: #0e1013;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.skyguard-v4 {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #0e1013;
+}
+
+.sky-globe {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.sky-globe .cesium-viewer,
+.sky-globe .cesium-widget,
+.sky-globe canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.drone-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.drone-overlay canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.sky-topbar {
+  position: absolute;
+  z-index: 30;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 62px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(14, 16, 19, 0.96);
+  border-bottom: 1px solid rgba(232, 235, 239, 0.33);
+}
+
+.sky-logo {
+  color: #e8ebef;
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  white-space: nowrap;
+}
+
+.sky-logo span {
+  display: inline-block;
+  padding: 4px 7px;
+  border-radius: 4px;
+  background: #e8ebef;
+  color: #0e1013;
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+.sky-top-status {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+.sky-topbar small {
+  color: #c3c9d0;
+  font-size: 11px;
+}
+
+.sky-risk-dashboard,
+.sky-flight-panel {
+  position: absolute;
+  z-index: 20;
+  top: 78px;
+  left: 17px;
+  width: 355px;
+  max-height: calc(100vh - 136px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 18px;
+  background: rgba(18, 22, 28, 0.97);
+  border: 1px solid rgba(232, 235, 239, 0.4);
+  border-radius: 3px;
+  scrollbar-width: thin;
+  scrollbar-color: #23272d #12161c;
+}
+
+.sky-dashboard-brand {
+  padding-bottom: 14px;
+  border-bottom: 1px solid #23272d;
+}
+
+.sky-dashboard-brand h2 {
+  margin: 0;
+  font-size: 24px;
+  letter-spacing: 2px;
+  color: #e8ebef;
+}
+
+.sky-dashboard-brand span {
+  display: block;
+  margin-top: 4px;
+  color: #c3c9d0;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+}
+
+.sky-risk-section {
+  margin-top: 22px;
+}
+
+.sky-risk-section h3,
+.sky-flight-panel h2,
+.sky-flight-panel h3 {
+  margin: 0 0 14px;
+  color: #e8ebef;
+  font-size: 12px;
+  letter-spacing: 1.2px;
+}
+
+.sky-flight-panel h2 {
+  font-size: 17px;
+}
+
+.sky-flight-panel h3 {
+  margin-top: 24px;
+}
+
+.sky-muted {
+  color: #c3c9d0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.sky-data-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid #23272d;
+  font-size: 11px;
+}
+
+.sky-data-row span {
+  color: #c3c9d0;
+}
+
+.sky-data-row strong {
+  color: #e8ebef;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.sky-api-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 0 14px;
+  padding: 10px;
+  background: #171c23;
+  border: 1px solid #23272d;
+  border-radius: 3px;
+  font-size: 10px;
+}
+
+.sky-api-status span {
+  color: #c3c9d0;
+}
+
+.sky-api-status .ready {
+  color: #e8ebef;
+}
+
+.sky-api-status .loading {
+  color: #d99a1e;
+}
+
+.sky-api-status .unavailable {
+  color: #d64545;
+}
+
+.sky-metric-grid,
+.sky-flight-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  margin: 12px 0;
+}
+
+.sky-metric-grid > div,
+.sky-flight-metrics > div {
+  min-width: 0;
+  padding: 12px;
+  background: #171c23;
+  border: 1px solid #23272d;
+  border-radius: 3px;
+}
+
+.sky-metric-grid span,
+.sky-flight-metrics span {
+  display: block;
+  min-height: 24px;
+  color: #c3c9d0;
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.sky-metric-grid strong,
+.sky-flight-metrics strong {
+  display: block;
+  margin-top: 6px;
+  color: #e8ebef;
+  font-size: 23px;
+  overflow-wrap: anywhere;
+}
+
+.sky-metric-grid small {
+  display: block;
+  margin-top: 2px;
+  color: #c3c9d0;
+  font-size: 10px;
+}
+
+.sky-button {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border: 1px solid #23272d;
+  border-radius: 3px;
+  background: #171c23;
+  color: #e8ebef;
+  font-size: 12px;
+  font-weight: 800;
+  transition: background .15s, transform .15s;
+}
+
+.sky-button:hover:not(:disabled) {
+  background: #23272d;
+}
+
+.sky-button:active:not(:disabled) {
+  transform: scale(.99);
+}
+
+.sky-button:disabled {
+  opacity: .55;
+  cursor: wait;
+}
+
+.sky-button-launch,
+.sky-button-ai {
+  background: #e8ebef;
+  color: #0e1013;
+  border-color: #e8ebef;
+}
+
+.sky-button-launch:hover:not(:disabled),
+.sky-button-ai:hover:not(:disabled) {
+  background: #e8ebef;
+}
+
+.sky-range-label {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 16px 0;
+  color: #c3c9d0;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.sky-range-label input {
+  width: 100%;
+  accent-color: #e8ebef;
+}
+
+.sky-warning {
+  margin: 10px 0;
+  padding: 11px;
+  border: 1px solid #d99a1e;
+  border-radius: 3px;
+  background: #171c23;
+  color: #d99a1e;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.sky-risk-summary {
+  padding: 18px 12px;
+  margin: 15px 0;
+  border: 1px solid #e8ebef;
+  border-radius: 3px;
+  background: #171c23;
+  text-align: center;
+}
+
+.sky-risk-summary span {
+  display: block;
+  color: #c3c9d0;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+.sky-risk-summary > strong {
+  display: block;
+  margin: 5px 0;
+  color: #e8ebef;
+  font-size: 52px;
+  line-height: 1.2;
+}
+
+.sky-risk-summary strong small {
+  color: #c3c9d0;
+  font-size: 18px;
+}
+
+.sky-risk-summary > b {
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+.sky-risk-summary p {
+  margin-bottom: 0;
+  color: #c3c9d0;
+  font-size: 11px;
+}
+
+.sky-risk-summary.medium {
+  background: #171c23;
+  border-color: #d99a1e;
+}
+
+.sky-risk-summary.medium > strong {
+  color: #d99a1e;
+}
+
+.sky-risk-summary.high {
+  background: #171c23;
+  border-color: #d64545;
+}
+
+.sky-risk-summary.high > strong {
+  color: #d64545;
+}
+
+.sky-risk-summary.unknown {
+  background: #171c23;
+  border-color: #3a4450;
+}
+
+.sky-risk-summary.unknown > strong {
+  color: #c3c9d0;
+}
+
+.sky-risk-factor {
+  margin: 14px 0;
+}
+
+.sky-factor-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 7px;
+  font-size: 11px;
+}
+
+.sky-factor-header span {
+  color: #c3c9d0;
+}
+
+.sky-factor-track {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: #171c23;
+}
+
+.sky-factor-track > div {
+  height: 100%;
+  border-radius: 3px;
+  background: #e8ebef;
+}
+
+.sky-risk-factor small {
+  display: block;
+  margin-top: 5px;
+  color: #8a929d;
+  font-size: 10px;
+}
+
+.sky-species-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.sky-species {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  background: #171c23;
+  border-radius: 3px;
+}
+
+.sky-species img {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 3px;
+}
+
+.sky-species > div {
+  min-width: 0;
+}
+
+.sky-species strong,
+.sky-species small,
+.sky-species span {
+  display: block;
+}
+
+.sky-species strong {
+  font-size: 12px;
+}
+
+.sky-species small {
+  margin-top: 3px;
+  color: #c3c9d0;
+  font-size: 10px;
+}
+
+.sky-species span {
+  margin-top: 3px;
+  color: #e8ebef;
+  font-size: 10px;
+}
+
+.sky-external-link {
+  color: #e8ebef;
+  font-size: 12px;
+  text-decoration: underline;
+}
+
+.sky-ai-output {
+  margin: 14px 0;
+  border: 1px solid #23272d;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.sky-ai-output-title {
+  padding: 10px;
+  background: #171c23;
+  color: #e8ebef;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.sky-ai-output-text {
+  padding: 13px;
+  background: #12161c;
+  color: #e8ebef;
+  font-size: 12px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.sky-disclaimer {
+  margin-top: 20px;
+  font-size: 10px;
+}
+
+.sky-event {
+  padding: 10px;
+  border: 1px solid #23272d;
+  background: #171c23;
+  color: #e8ebef;
+  font-size: 12px;
+}
+
+.mission-map-panel {
+  position: absolute;
+  z-index: 22;
+  right: 20px;
+  bottom: 58px;
+  display: flex;
+  flex-direction: column;
+  width: 340px;
+  height: 270px;
+  background: #12161c;
+  border: 2px solid #e8ebef;
+  border-radius: 3px;
+  overflow: hidden;
+  transition: width .25s, height .25s;
+}
+
+.mission-map-panel.expanded {
+  width: min(55vw, 800px);
+  height: min(65vh, 620px);
+}
+
+.mission-map-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 12px;
+  background: #12161c;
+  color: #e8ebef;
+  font-size: 11px;
+}
+
+.mission-map-header button,
+.mission-map-toolbar button {
+  padding: 7px 9px;
+  border: 1px solid #23272d;
+  border-radius: 3px;
+  background: #171c23;
+  color: #e8ebef;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.mission-map-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  padding: 8px;
+  background: #12161c;
+}
+
+.mission-map-toolbar button.selected {
+  background: #e8ebef;
+  border-color: #e8ebef;
+  color: #0e1013;
+}
+
+.mission-map-canvas {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+}
+
+.sky-map-launch {
+  color: #e8ebef;
+  font-size: 30px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.sky-map-destination {
+  color: #d99a1e;
+  font-size: 27px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.sky-map-wildlife {
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #3a4450;
+  border-radius: 50%;
+  background: #8a929d;
+  color: #e8ebef;
+  font-size: 7px;
+}
+
+.mission-map-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 9px 12px;
+  background: #12161c;
+  color: #c3c9d0;
+  font-size: 9px;
+}
+
+.mission-map-footer span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.mission-map-footer i {
+  display: inline-block;
+  width: 16px;
+  height: 4px;
+  border-radius: 4px;
+}
+
+.sky-legend-power {
+  background: #d64545;
+}
+
+.sky-legend-route {
+  background: #d99a1e;
+}
+
+.sky-legend-flight {
+  background: #e8ebef;
+}
+
+.sky-scene-error {
+  position: absolute;
+  z-index: 35;
+  top: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 45vw;
+  padding: 10px 14px;
+  border: 1px solid #d99a1e;
+  border-radius: 3px;
+  background: #171c23;
+  color: #d99a1e;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.sky-footer {
+  position: absolute;
+  z-index: 25;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 42px;
+  padding: 0 22px;
+  background: rgba(14, 16, 19, 0.96);
+  border-top: 1px solid rgba(232, 235, 239, 0.33);
+  color: #c3c9d0;
+  font-size: 10px;
+  letter-spacing: .4px;
+}
+
+@media (max-width: 950px) {
+  .sky-risk-dashboard,
+  .sky-flight-panel {
+    width: 285px;
+    padding: 13px;
+  }
+
+  .mission-map-panel.expanded {
+    width: calc(100vw - 320px);
+  }
+
+  .sky-topbar small {
+    display: none;
+  }
+}
+
+@media (max-width: 650px) {
+  .sky-topbar {
+    padding: 0 10px;
+  }
+
+  .sky-logo {
+    font-size: 16px;
+  }
+
+  .sky-top-status {
+    font-size: 9px;
+  }
+
+  .sky-risk-dashboard,
+  .sky-flight-panel {
+    top: 70px;
+    left: 8px;
+    width: 215px;
+    max-height: 43vh;
+    padding: 10px;
+  }
+
+  .sky-metric-grid > div,
+  .sky-flight-metrics > div {
+    padding: 8px;
+  }
+
+  .sky-metric-grid strong,
+  .sky-flight-metrics strong {
+    font-size: 19px;
+  }
+
+  .mission-map-panel {
+    right: 8px;
+    width: 210px;
+    height: 200px;
+  }
+
+  .mission-map-panel.expanded {
+    width: calc(100vw - 16px);
+    height: 40vh;
+  }
+
+  .sky-footer {
+    padding: 0 8px;
+    font-size: 8px;
+  }
+
+  .sky-footer span {
+    display: none;
+  }
+}
+
+
+/* KnowFlyZone look: same score card as the app (band colour on the border and label, number in off-white),
+   B612 Mono for numbers and labels, flat 3 px panels, dot markers instead of symbols. */
+.sky-risk-summary > strong,
+.sky-risk-summary.medium > strong,
+.sky-risk-summary.high > strong,
+.sky-risk-summary.low > strong { color: #e8ebef; }
+.sky-risk-summary.unknown > strong { color: #8a929d; }
+.sky-risk-summary.low { border-color: #2f9e5b; }
+.sky-risk-summary span { font-family: 'B612 Mono', ui-monospace, monospace; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+.sky-risk-summary.high span { color: #d64545; }
+.sky-risk-summary.medium span { color: #d99a1e; }
+.sky-risk-summary.low span { color: #2f9e5b; }
+.sky-risk-summary > b { display: block; font-weight: 400; font-size: 13px; letter-spacing: 0; color: #c3c9d0; }
+
+.sky-risk-summary > strong,
+.sky-metric-grid strong,
+.sky-flight-metrics strong,
+.sky-data-row strong,
+.sky-factor-header strong,
+.sky-topbar small { font-family: 'B612 Mono', ui-monospace, monospace; }
+
+.sky-logo { font-size: 17px; letter-spacing: 0; color: #e8ebef; }
+.sky-logo a { color: #e8ebef; text-decoration: none; }
+.sky-logo a:hover { text-decoration: underline; }
+.sky-logo span { margin-left: 6px; background: none; border: 1px solid #23272d; color: #8a929d; font-family: 'B612 Mono', ui-monospace, monospace; font-weight: 400; }
+.sky-top-status { font-family: 'B612 Mono', ui-monospace, monospace; font-weight: 400; color: #c3c9d0; }
+.sky-dashboard-brand h2 { font-size: 20px; letter-spacing: 0; color: #e8ebef; }
+.sky-risk-section h3, .sky-flight-panel h2, .sky-flight-panel h3 { color: #8a929d; font-family: 'B612 Mono', ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.1em; }
+.sky-flight-panel h2 { color: #e8ebef; text-transform: none; letter-spacing: 0; font-family: 'B612', system-ui, sans-serif; }
+
+.sky-api-status .ready { color: #2f9e5b; }
+.sky-api-status .unavailable { color: #8a929d; }
+
+.sky-button-launch:hover:not(:disabled),
+.sky-button-ai:hover:not(:disabled) { background: #c9cfd6; }
+
+.sky-map-launch { width: 14px; height: 14px; border-radius: 50%; background: #d64545; border: 3px solid #0e1013; outline: 1px solid #3a4450; font-size: 0; }
+.sky-map-destination { width: 12px; height: 12px; border-radius: 50%; background: #d99a1e; border: 2px solid #0e1013; font-size: 0; }
+.sky-map-wildlife { font-size: 0; }
