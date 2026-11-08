@@ -5,15 +5,9 @@
  "zones": [],
  "best_time": null,
  "raptor_alert": null,
- "checks": {
-  "safety": "green",
-  "legal": "green",
-  "wildlife": "yellow"
- },
- "level": "yellow",
  "score": 40,
  "bird_score": 25,
- "message": "Wait: migration season, high bird activity",
+ "message": "Risk 40/100: Migration season, high bird activity",
  "hazards": [
   {
    "type": "migration",
@@ -65,5 +59,6 @@
    "level": "green",
    "detail": "Air quality index 28"
   }
- ]
+ ],
+ "safer_spot": null
 }

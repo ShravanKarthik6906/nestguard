@@ -1,7 +1,6 @@
 {
- "level": "red",
  "score": 98,
- "message": "Nesting zone close by, stay 170 m away or climb to 300 ft",
+ "message": "Risk 98/100: Nesting zone close by, stay 170 m away or climb to 300 ft",
  "reasons": [
   "Hawk or eagle sightings within 1 km",
   "Colony nesters nearby (terns, gulls, herons)",
@@ -11,11 +10,6 @@
  "zones": [],
  "best_time": "No safe window: nesting season here until the end of August",
  "raptor_alert": "Hawks or eagles seen within 1 km. They can attack drones, especially near their nests. Watch the sky and land if one comes close.",
- "checks": {
-  "wildlife": "red",
-  "safety": "green",
-  "legal": "green"
- },
  "hazards": [
   {
    "type": "nesting",
@@ -63,5 +57,6 @@
    "detail": "Air quality index 28"
   }
  ],
- "bird_score": 98
+ "bird_score": 98,
+ "safer_spot": null
 }

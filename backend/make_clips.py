@@ -20,10 +20,9 @@ import urllib.request
 from speak import fish_tts
 
 OUT = pathlib.Path(__file__).parent.parent / "app" / "public" / "audio"
-LABELS = {"green": "Go", "yellow": "Wait", "red": "Don't fly"}
 
-# Fallbacks the app plays if /speak is unreachable (one per level).
-PHRASES = ["Go. Clear to fly.", "Wait. Check the warnings before you fly.", "Don't fly."]
+# Fallbacks the app plays if /speak is unreachable (one per risk band).
+PHRASES = ["Low risk.", "Medium risk.", "High risk."]
 
 PRESETS = [(42.7302, -73.6788, None), (42.7302, -73.6788, "2027-05-15"), (33.70, -118.04, "2021-05-13"),
            (42.7493, -73.694138, None)]
@@ -32,24 +31,20 @@ WALK = [(round(42.7302 + (42.7493 - 42.7302) * i / 9, 5), round(-73.6788 + (-73.
         for i in range(10)]
 
 
-RANK = {"red": 0, "yellow": 1, "green": 2}
-ORDER = ["powerlines", "raptors", "wind", "clouds", "visibility", "rain", "nesting", "crowd", "migration", "air"]
-
-
 def units(t):
-    t = re.sub(r"(\d)\s?m\b", r"\1 meters", t)
+    t = re.sub(r"\b1\s?km\b", "1 kilometer", t)
     t = re.sub(r"(\d)\s?km\b", r"\1 kilometers", t)
+    t = re.sub(r"\b1\s?m\b", "1 meter", t)
+    t = re.sub(r"(\d)\s?m\b", r"\1 meters", t)
+    t = re.sub(r"\b1\s?ft\b", "1 foot", t)
     return re.sub(r"(\d)\s?ft\b", r"\1 feet", t)
 
 
-def spoken(level, message, hazards=None):
-    """Same rule as app/src/speech.js: worst red hazard's detail if any, else the message;
-    say the level first unless the text already does."""
-    label = LABELS.get(level, "Wait")
-    reds = sorted((h for h in (hazards or []) if h.get("level") == "red" and h.get("detail")),
-                  key=lambda h: ORDER.index(h["type"]) if h.get("type") in ORDER else 99)
-    text = units((reds[0]["detail"] if reds else message or "").strip().rstrip("."))
-    return text if text.lower().startswith(label.lower()) else f"{label}. {text}".strip()
+def spoken(score, message):
+    """Same rule as app/src/speech.js: "Risk N. <main driver>" (message minus its "Risk N/100:" prefix)."""
+    driver = re.sub(r"^risk\s*\d+\s*/\s*100\s*[:.,-]?\s*", "", (message or "").strip(), flags=re.I).rstrip(".")
+    driver = units(driver[:1].upper() + driver[1:]) if driver else ""
+    return f"Risk {round(score)}. {driver}".strip() if isinstance(score, (int, float)) else driver
 
 
 def from_api(api):
@@ -64,7 +59,7 @@ def from_api(api):
             print("failed:", e)
             continue
         print(d["level"])
-        out.add(spoken(d["level"], d["message"], d.get("hazards")))
+        out.add(spoken(d.get("score"), d.get("message")))
     return sorted(out)
 
 

@@ -154,7 +154,7 @@ function startWalk() {
   startDemo(
     (p, i, n) => {
       $('demo-info').textContent = `Point ${i + 1} of ${n}`
-      pickSpot(p.lat, p.lon, { speak: i === 0, why: false }) // walk: first point, then only level changes
+      pickSpot(p.lat, p.lon, { speak: i === 0, why: false }) // walk: first point, then only when the risk band changes
     },
     (msg) => setStatus(msg, 'error'),
   )

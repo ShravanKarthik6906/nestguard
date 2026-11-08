@@ -1,6 +1,7 @@
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { MAPBOX_TOKEN, MAPBOX_STYLE } from './config.js'
+import { band, riskOf } from './risk.js'
 
 export const COLORS = { green: '#2f9e5b', yellow: '#d99a1e', red: '#d64545' }
 
@@ -41,7 +42,7 @@ export function createMap(el, center) {
 export function drawZones(zones) {
   zoneLayer.clearLayers()
   for (const z of zones) {
-    const color = COLORS[z.level] || COLORS.yellow
+    const color = COLORS[band(riskOf(z)).cls] || COLORS.yellow
     L.circle([z.lat, z.lon], {
       radius: z.radius_m, color, fillColor: color, fillOpacity: 0.3, weight: 2,
       interactive: false,
