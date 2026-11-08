@@ -36,13 +36,11 @@ getStats().then((rows) => {
   if (total) $('live-stats').textContent = `${total} pre-flight checks were run in the last 24 hours, and ${red} of them said Don't fly. Counted with Tiger Data.`
 }).catch(() => {})
 
-// ---- letters fly in for each heading and paragraph as it scrolls into view
+// ---- words whoosh into place, one after another, as each heading and paragraph scrolls into view
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches
-const rnd = (a) => (Math.random() * 2 - 1) * a
 
-// Wrap every letter in a span (words kept together so lines never break mid-word).
-// Links and bold text stay intact; live values that load later are left alone.
-function splitLetters(el) {
+// Wrap every word in a span. Links and bold text stay intact; live values that load later are left alone.
+function splitWords(el) {
   let count = 0
   const walk = (node) => {
     for (const child of [...node.childNodes]) {
@@ -51,21 +49,11 @@ function splitLetters(el) {
         for (const part of child.textContent.split(/(\s+)/)) {
           if (!part) continue
           if (/^\s+$/.test(part)) { frag.append(document.createTextNode(part)); continue }
-          const word = document.createElement('span')
-          word.className = 'w'
-          for (const ch of part) {
-            const c = document.createElement('span')
-            c.className = 'ch'
-            c.textContent = ch
-            // curved approach like the drone parts: start off to one side, swing through a bent midpoint, spin down, lock in
-            const a = Math.random() * Math.PI * 2, dist = 90 + Math.random() * 110, side = Math.random() < 0.5 ? -1 : 1
-            const dx = Math.cos(a) * dist, dy = Math.sin(a) * dist
-            const cx = dx * 0.35 - Math.sin(a) * side * dist * 0.45, cy = dy * 0.35 + Math.cos(a) * side * dist * 0.45
-            c.style.cssText = `--dx:${dx.toFixed(0)}px;--dy:${dy.toFixed(0)}px;--cx:${cx.toFixed(0)}px;--cy:${cy.toFixed(0)}px;` +
-              `--r:${(side * (90 + Math.random() * 200)).toFixed(0)}deg;--i:${count++}`
-            word.append(c)
-          }
-          frag.append(word)
+          const w = document.createElement('span')
+          w.className = 'w'
+          w.textContent = part
+          w.style.setProperty('--i', count++)
+          frag.append(w)
         }
         child.replaceWith(frag)
       } else if (child.nodeType === 1 && !child.id?.startsWith('live-')) walk(child)
@@ -78,9 +66,9 @@ function splitLetters(el) {
 const blocks = [...document.querySelectorAll('.info h2, .info section > p, .info .label')]
 if (!reduceMotion) {
   for (const b of blocks) {
-    const n = splitLetters(b)
+    const n = splitWords(b)
     b.classList.add('fly')
-    b.style.setProperty('--step', `${Math.min(10, 700 / Math.max(1, n)).toFixed(2)}ms`) // a whole block lands in about 1.5 s
+    b.style.setProperty('--step', `${Math.min(28, 600 / Math.max(1, n)).toFixed(1)}ms`) // a whole block lands in under a second
   }
 }
 const seen = new IntersectionObserver((entries) => {

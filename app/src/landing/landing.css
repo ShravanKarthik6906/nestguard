@@ -41,17 +41,23 @@ section { padding: 56px 0; }
 /* non-text parts of a section (hazard list, buttons) simply fade in */
 section.reveal > :not(.fly) { opacity: 0; transition: opacity 0.8s ease 0.4s; }
 section.reveal.in > :not(.fly) { opacity: 1; }
-/* letters fly into place */
+/* words whoosh in from the right: fast, sharp deceleration, tiny overshoot, a fading speed streak behind */
 .w { display: inline-block; white-space: nowrap; }
-.fly .ch { display: inline-block; opacity: 0; }
-.fly.in .ch { animation: chfly 0.85s cubic-bezier(0.25, 0.8, 0.25, 1) both; animation-delay: calc(var(--i) * var(--step)); }
-/* like the drone parts, but shorter: curved flight with a winding-down spin, a pause above the slot, then lock in */
-@keyframes chfly {
-  0%   { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--r)) scale(0.55); text-shadow: 0 0 10px rgba(214, 230, 255, 0.9); }
-  15%  { opacity: 1; }
-  60%  { transform: translate(var(--cx), var(--cy)) rotate(calc(var(--r) * -0.12)) scale(1.06); text-shadow: 0 0 8px rgba(214, 230, 255, 0.75); }
-  82%  { transform: translate(0, -4px) rotate(0deg) scale(1.03); text-shadow: 0 0 6px rgba(214, 230, 255, 0.6); }
-  100% { opacity: 1; transform: none; text-shadow: 0 0 0 rgba(214, 230, 255, 0); }
+.fly .w { position: relative; opacity: 0; }
+.fly.in .w { animation: whoosh 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: calc(var(--i) * var(--step)); }
+.fly .w::after { content: ''; position: absolute; left: 100%; top: 52%; height: 1px; width: 46px; pointer-events: none;
+  background: linear-gradient(to right, rgba(214, 230, 255, 0.5), rgba(214, 230, 255, 0)); transform-origin: left; opacity: 0; }
+.fly.in .w::after { animation: streak 0.6s ease-out both; animation-delay: calc(var(--i) * var(--step)); }
+@keyframes whoosh {
+  0%   { opacity: 0; transform: translateX(180px); }
+  20%  { opacity: 1; }
+  75%  { transform: translateX(-5px); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes streak {
+  0%   { opacity: 0.9; transform: scaleX(1.6); }
+  55%  { opacity: 0.25; transform: scaleX(0.3); }
+  100% { opacity: 0; transform: scaleX(0); }
 }
 .label { display: block; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
 h2 { font-size: clamp(28px, 3.8vw, 42px); line-height: 1.15; margin: 0 0 22px; }
