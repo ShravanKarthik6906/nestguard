@@ -6,5 +6,8 @@
   "Don't fly. Nesting zone close by, stay 170 m away or climb to 300 ft": "don-t-fly-nesting-zone-close-by-stay-170-m-away-or-climb-to-.mp3",
   "Don't fly: below FAA weather minimums": "don-t-fly-below-faa-weather-minimums.mp3",
   "Go. Clear to fly": "go-clear-to-fly.mp3",
-  "Wait. Birds nearby, keep at least 70 m away": "wait-birds-nearby-keep-at-least-70-m-away.mp3"
+  "Wait. Birds nearby, keep at least 70 m away": "wait-birds-nearby-keep-at-least-70-m-away.mp3",
+  "Low risk.": "low-risk.mp3",
+  "Medium risk.": "medium-risk.mp3",
+  "High risk.": "high-risk.mp3"
 }
