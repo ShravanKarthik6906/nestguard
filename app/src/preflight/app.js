@@ -7,7 +7,7 @@ import '@fontsource/b612-mono/700.css'
 import './pf.css'
 import { RPI, USE_MOCK } from '../config.js'
 import { getZones, check, explain, getPowerlines, distM } from '../api.js'
-import { createMap, drawZones, setPin, setPinRisk, drawPowerlines, showPowerlines, onFeatureClick, drawRoute, clearRoute, getMap, setSaferSpot, frameSpot } from '../map.js'
+import { createMap, drawZones, setPin, setPinRisk, drawPowerlines, showPowerlines, onFeatureClick, drawRoute, clearRoute, getMap, setSaferSpot, frameSpot, showPin } from '../map.js'
 import { band, mainDriver } from '../risk.js'
 import { startDemo, stopDemo, pauseDemo, resumeDemo, stepDemo, isRunning, demoDate, PATH_POINTS } from '../demo.js'
 import { announce } from '../speech.js'
@@ -259,7 +259,7 @@ const AREA_WIDE = ['migration', 'wind', 'rain', 'clouds', 'visibility', 'air']
 function renderSafer(r, hz) {
   const sp = r.safer_spot
   const placed = sp && Number.isFinite(sp.lat) && Number.isFinite(sp.lon)
-  setSaferSpot(placed ? sp : null, () => goToSafer(sp))
+  setSaferSpot(placed && !state.demo ? sp : null, () => goToSafer(sp))
   if (sp) {
     $('r-safer').innerHTML = `<div class="safer-card"><span class="safer-k">Lower-risk spot nearby</span>` +
       `<p class="safer-main"><span class="safer-num mono">${esc(sp.score)}</span><span class="of mono">/100</span>` +
@@ -465,12 +465,14 @@ map.on('click', async (e) => {
 const pts = PATH_POINTS()
 $('demo-dots').innerHTML = pts.map(() => '<i></i>').join('')
 let demoFirst = null
+let tourScores = []
 let lastDemoCheck = Promise.resolve()
 function startWalk() {
   scenarioKey = null
   $('date').value = today()
-  state.demo = true; demoFirst = null
-  state.spot = { ...pts[0], name: 'Demo route, Troy' }
+  state.demo = true; demoFirst = null; tourScores = []
+  document.body.classList.add('demo-mode'); showPin(false); setSaferSpot(null)
+  state.spot = { lat: pts[0].lat, lon: pts[0].lon, name: pts[0].name }
   unlockSteps()
   go('explore')
   $('demo-panel').hidden = false; $('demo-end').hidden = true
@@ -479,16 +481,17 @@ function startWalk() {
   startDemo(onDemoPoint, (msg) => { $('demo-device').textContent = msg }, onDemoEnd)
 }
 function onDemoPoint(p, i, n) {
-  state.spot = { lat: p.lat, lon: p.lon, name: `Demo route, step ${i + 1} of ${n}` }
+  state.spot = { lat: p.lat, lon: p.lon, name: p.name }
   $('demo-step').textContent = `Stop ${i + 1} of ${n}`
   $('demo-dots').querySelectorAll('i').forEach((d, k) => { d.className = k < i ? 'done' : k === i ? 'now' : '' })
-  drawRoute(pts, i)
-  $('demo-now').innerHTML = ''
+  drawRoute(pts, i, tourScores)
+  $('demo-now').innerHTML = `<p class="tour-name">${esc(p.name)}</p><p class="tour-point">${esc(p.point)}</p>`
   $('demo-prev').disabled = i === 0; $('demo-next').disabled = i === n - 1
-  lastDemoCheck = runCheck({ speak: i === 0, why: false }).then(() => {
-    const r = state.result; if (!r) return
+  lastDemoCheck = runCheck({ speak: true, why: false }).then(() => {
+    const r = state.result; if (!r || !state.demo) return
     if (i === 0) demoFirst = r.score
-    // the score card above already shows this stop's score and reason
+    tourScores[i] = r.score
+    drawRoute(pts, i, tourScores)              // label this stop with its live score
   })
 }
 async function onDemoEnd() {
@@ -496,13 +499,21 @@ async function onDemoEnd() {
   try { await lastDemoCheck } catch {}           // wait for the last stop's check, not the one before it
   const r = state.result
   $('demo-end').hidden = false
-  $('demo-end').innerHTML = `<p>Done.${demoFirst !== null && r ? ` Risk ${Math.round(demoFirst)} at RPI, ${Math.round(r.score)} at the power line.` : ''}</p>` +
+  const done = pts.map((p, k) => ({ p, sc: tourScores[k] })).filter((x) => x.sc != null)
+  let summary = 'Tour finished.'
+  if (done.length >= 2) {
+    const lo = done.reduce((a, b) => (b.sc < a.sc ? b : a)), hi = done.reduce((a, b) => (b.sc > a.sc ? b : a))
+    summary = `Tour finished. Highest risk: ${esc(hi.p.name)} (${Math.round(hi.sc)}). Lowest: ${esc(lo.p.name)} (${Math.round(lo.sc)}). ` +
+      'Same city, same day: where you fly changes the risk.'
+  }
+  $('demo-end').innerHTML = `<p>${summary}</p>` +
     '<div class="row"><button class="btn" type="button" id="demo-replay">Replay</button><button class="btn" type="button" data-go="results">Full assessment</button></div>'
   $('demo-replay').addEventListener('click', startWalk)
 }
 async function endWalk() {
   pauseDemo()
   state.demo = false
+  document.body.classList.remove('demo-mode'); showPin(true)
   $('demo-panel').hidden = true
   if (state.result) renderSpotSummary()   // brings back buttons hidden during the demo
   clearRoute()

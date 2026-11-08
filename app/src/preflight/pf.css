@@ -135,6 +135,22 @@ body.pf {
 .pf .safer-flag:hover .safer-flag-l { filter: brightness(1.1); }
 /* demo stops on the map */
 .pf .stop-icon { background: none; border: 0; }
+/* guided tour stops: a dot with a label to its right */
+.pf .tour-stop { position: absolute; left: -7px; top: -7px; display: flex; align-items: center; gap: 6px; white-space: nowrap; pointer-events: none; }
+.pf .tour-stop i { width: 14px; height: 14px; border-radius: 50%; background: #1b2129; border: 2px solid #8a929d; flex: none; box-sizing: border-box; }
+.pf .tour-stop.green i { background: var(--go); border-color: var(--go); }
+.pf .tour-stop.yellow i { background: var(--wait); border-color: var(--wait); }
+.pf .tour-stop.red i { background: var(--stop); border-color: var(--stop); }
+.pf .tour-stop.now i { border-color: var(--text); border-width: 3px; }
+.pf .tour-l { font: 700 12px 'B612', sans-serif; color: var(--text); background: rgba(14, 16, 19, 0.88); border: 1px solid var(--line); border-radius: 3px; padding: 3px 7px; }
+.pf .tour-stop.todo .tour-l { color: #8a929d; }
+.pf .tour-stop.now .tour-l { border-color: var(--text); }
+.pf .tour-l b { font-family: 'B612 Mono', monospace; margin-right: 2px; color: #8a929d; }
+.pf .stop-sc { font-family: 'B612 Mono', monospace; margin-left: 4px; }
+.pf .tour-stop.green .stop-sc { color: var(--go); } .pf .tour-stop.yellow .stop-sc { color: var(--wait); } .pf .tour-stop.red .stop-sc { color: var(--stop); }
+/* the stop's name and why it is on the tour */
+.pf .demo-now .tour-name { margin: 8px 0 2px; font-size: 16px; font-weight: 700; color: var(--text); }
+.pf .demo-now .tour-point { margin: 0; font-size: 14px; color: #c3c9d0; line-height: 1.45; }
 .pf .stop { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; font: 700 10px 'B612 Mono', monospace; color: #c3c9d0; background: #1b2129; border: 1.5px solid #5b6570; }
 .pf .stop.done { color: #04110e; background: var(--teal); border-color: var(--teal); }
 .pf .eyebrow { font-size: 13px; color: var(--muted); margin: 0 0 4px; }
@@ -376,3 +392,7 @@ body.pf > .map { display: none; }
   /* during the demo, tapping the map does nothing, so drop that hint */
   .pf #demo-panel:not([hidden]) ~ #feat:has(> p.small:only-child) { display: none; }
 }
+
+/* guided tour: the side panel shows the stop's score, what the stop is about, and the controls */
+.pf.demo-mode #exp-safer, .pf.demo-mode .layers, .pf.demo-mode .legend { display: none; }
+.pf.demo-mode .side > #exp-score { grid-column: 1 / -1; }

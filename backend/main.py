@@ -452,16 +452,13 @@ def cached_check(lat, lon, date, explain_it=False, log=True):
     return out
 
 
+TOUR = [(42.7302, -73.6788), (42.7317, -73.6889), (42.7310, -73.6915), (42.7493, -73.6941), (42.7466, -73.6677)]
+
+
 def demo_spots():
-    """What the demo clicks: the 10-step walk (app/src/demo.js) and the scenario buttons."""
-    start, end = (42.7302, -73.6788), (42.7493, -73.694138)
+    """What the demo clicks: the 5 guided tour stops (app/src/demo.js STOPS) and the scenario buttons."""
     today = lambda la, lo: weather.local_now(la, lo).date()      # the spot's own "today"
-    spots = []
-    for i in range(10):
-        t = i / 9
-        la, lo = (round(start[0] + (end[0] - start[0]) * t, 5), round(start[1] + (end[1] - start[1]) * t, 5))
-        la, lo = float(f"{la:.4f}"), float(f"{lo:.4f}")           # the app sends 4 decimals
-        spots.append((la, lo, today(la, lo)))
+    spots = [(la, lo, today(la, lo)) for la, lo in TOUR]
     spots += [(42.7302, -73.6788, datetime.date(2027, 5, 15)),
               (33.7, -118.04, datetime.date(2021, 5, 13)),
               (42.7493, -73.6941, today(42.7493, -73.6941))]
