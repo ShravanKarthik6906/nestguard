@@ -109,7 +109,7 @@ class LinkScreen:
 
     def write(self, line1, line2=""):
         if LINK:
-            LINK.text = line1         # e.g. "DON'T FLY 98" -> the UNO Q's top LCD line
+            LINK.text = line1         # e.g. "RISK 98" -> the UNO Q's top LCD line
 
     def flash(self, times=3):
         pass

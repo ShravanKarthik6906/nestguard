@@ -80,7 +80,23 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ZONE_CACHE = os.path.join(HERE, "zones_cache.json")
 
 LEVEL_RANK = {"unknown": -1, "green": 0, "yellow": 1, "red": 2}
-LABEL = {"green": "GO", "yellow": "WAIT", "red": "DON'T FLY", "unknown": "NO DATA"}
+LABEL = {"green": "RISK LOW", "yellow": "RISK MED", "red": "RISK HIGH", "unknown": "NO DATA"}
+
+
+def band(score):
+    """Risk score 0-100 -> LED band (same cut-offs as the backend: 60 / 30)."""
+    try:
+        s = float(score)
+    except (TypeError, ValueError):
+        return "unknown"
+    return "red" if s >= 60 else "yellow" if s >= 30 else "green"
+
+
+def msg_level(msg):
+    """The API now sends only a score; older backends sent a level."""
+    if msg.get("level") in ("green", "yellow", "red"):
+        return msg["level"]
+    return band(msg.get("score"))
 
 
 def log(*a):
@@ -365,8 +381,8 @@ def zone_level(pos, zones):
         except (KeyError, TypeError, ValueError):
             continue
         if d <= radius:
-            here = z.get("level", "red")
-            here = here if here in LEVEL_RANK else "red"
+            here = band(z["risk"]) if "risk" in z else z.get("level", "red")
+            here = here if here in LEVEL_RANK and here != "unknown" else "red"
         elif d <= radius + YELLOW_BUFFER_M:
             here = "yellow"
         else:
@@ -423,8 +439,8 @@ class Device:
             log("[zones] could not save cache:", e)
 
     def take_handoff(self, msg, pushed=False):
-        if not isinstance(msg, dict) or "level" not in msg:
-            raise ValueError("handoff needs at least a 'level' field")
+        if not isinstance(msg, dict) or ("level" not in msg and "score" not in msg):
+            raise ValueError("handoff needs at least a 'score' field")
         with self.lock:
             self.handoff = msg
             if pushed:
@@ -480,14 +496,13 @@ class Device:
     def decide(self):
         pos = self.position()
         msg = self.handoff or {}
-        api_level = msg.get("level", "unknown")
-        api_level = api_level if api_level in LEVEL_RANK else "unknown"
+        api_level = msg_level(msg)
         local = zone_level(pos, self.zones) if pos else "unknown"
         level = max(api_level, local, key=lambda l: LEVEL_RANK[l])
         if pos is None and not msg:
             return "unknown", "Waiting for GPS", ""
         score = msg.get("score")
-        head = LABEL[level] + (f" {score}" if score is not None and level == api_level else "")
+        head = f"RISK {score}" if score is not None and level == api_level else LABEL[level]
         parts = []
         if local != "unknown" and LEVEL_RANK[local] > LEVEL_RANK[api_level]:
             parts.append("Near a nesting zone" if local == "yellow" else "Inside a nesting zone")

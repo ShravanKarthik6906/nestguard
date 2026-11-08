@@ -27,7 +27,7 @@ TILE_DEG = 0.1                   # cache areas of ~10 km; one fetch covers a who
 FETCH_KM = 15                    # tile half-diagonal (~7 km) + safer_spot's 8 km search
 OK_TTL_S = 24 * 3600             # good fetches: keep a day
 FAIL_TTL_S = 15 * 60             # failed fetches: try again after 15 min
-TIMEOUT_S = 8
+TIMEOUT_S = 3                    # the app gives /zones and /check 4 s before falling back
 DAYS_BACK = 30
 
 _tiles = {}                      # (tile_lat, tile_lon) -> {"t", "ok", "n", "zones"}

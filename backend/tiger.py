@@ -131,7 +131,8 @@ def telemetry_history(minutes=60, bucket_s=60):
 
 def check_stats(hours=24):
     rows = run("""
-        SELECT time_bucket('1 hour', time) AS h, level, count(*)::int
+        SELECT time_bucket('1 hour', time) AS h, count(*)::int, round(avg(score))::int, max(score)
         FROM checks WHERE time > now() - make_interval(hours => %s)
-        GROUP BY h, level ORDER BY h""", (hours,), fetch=True)
-    return [{"hour": h.isoformat(timespec="minutes"), "level": lvl, "checks": n} for h, lvl, n in rows or []]
+        GROUP BY h ORDER BY h""", (hours,), fetch=True)
+    return [{"hour": h.isoformat(timespec="minutes"), "checks": n, "avg_risk": avg, "max_risk": mx}
+            for h, n, avg, mx in rows or []]

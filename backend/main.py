@@ -165,20 +165,21 @@ def best_time(lat, lon, date, base_risk, nesting_until, floor="green"):
     if run[0] <= local_today < end:
         window = f"Now until {b}"
     if best == 0:
-        return window
+        return f"Lowest risk: {window}"
     if best == 2:
         if nesting_until and scoring.level_for(round(base_risk * 100)) == "red":
-            return f"No safe window: nesting season here until the end of {nesting_until}"
-        return "No safe window today or tomorrow"
-    return f"No clear window; least risky {window}"
+            return f"High risk all day: nesting season here until the end of {nesting_until}"
+        return "High risk all day today and tomorrow"
+    return f"Lowest risk (medium): {window}"
 
 
 DIRECTIONS = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"]
 
 
-def safer_spot(lat, lon, date, level, area_min):
-    """Nearest nearby spot (0.5-3 km, 8 directions) with a better level. area_min = the level of
-    hazards that cover the whole area (weather, migration, air): moving 3 km can't beat those."""
+def safer_spot(lat, lon, date, level, area_min, area_points=0):
+    """Nearest nearby spot (0.5-3 km, 8 directions) in a lower risk band. area_min = the band of
+    hazards that cover the whole area (weather, migration, air): moving 3 km can't beat those.
+    area_points = their score points, so the spot's risk score is comparable to this one's."""
     if level == "green" or RANK[area_min] >= RANK[level]:
         return None                                    # moving won't fix area-wide hazards
     zones = get_zones(lat, lon, 8)
@@ -193,27 +194,35 @@ def safer_spot(lat, lon, date, level, area_min):
             r = scoring.score(clat, clon, date, zones)
             raptor_lvl = ("red" if "nesting season" in r["raptor_alert"] else "yellow") if r["raptor_alert"] else "green"
             cand_level = max(r["level"], raptor_lvl, area_min, key=lambda l: RANK[l])
-            if RANK[cand_level] < RANK[level] and (best is None or RANK[cand_level] < RANK[best["level"]]
-                                                   or (cand_level == best["level"] and r["score"] < best["score"]
+            cand_score = clamp(r["score"] + POINTS.get(raptor_lvl, 0) + area_points, cand_level)
+            if RANK[cand_level] < RANK[level] and (best is None or RANK[cand_level] < best["_band"]
+                                                   or (RANK[cand_level] == best["_band"]
+                                                       and cand_score < best["score"]
                                                        and km == best["distance_km"])):
                 best = {"lat": round(clat, 3), "lon": round(clon, 3), "distance_km": km,
-                        "direction": name, "level": cand_level, "score": r["score"],
-                        "label": f"{km:g} km {name}: {scoring.LABEL_WORD[cand_level]}"}
-        if best and best["level"] == "green":
-            break                                      # nearest Go found; don't look farther
+                        "direction": name, "score": cand_score, "_band": RANK[cand_level],
+                        "label": f"{km:g} km {name}: risk {cand_score}"}
+        if best and best["_band"] == 0:
+            break                                      # nearest low-risk spot found; don't look farther
+    if best:
+        best.pop("_band")
     return best
 
 
+def clamp(score, level):
+    """Keep the score inside its band, so the number always agrees with the worst hazard."""
+    lo, hi = {"red": (60, 100), "yellow": (30, 59), "green": (0, 29)}[level]
+    return max(lo, min(hi, score))
+
+
 POINTS = {"yellow": 15, "red": 40}          # extra score points per non-bird hazard
-HAZARD_MESSAGE = {
-    "powerlines": {"red": "Don't fly: power line too close, move at least 100 m away",
-                   "yellow": "Wait: power line nearby, stay low and keep it in sight"},
-    "crowd": {"yellow": "Wait: dense area with people below"},
-    "migration": {"yellow": "Wait: migration season, watch for flocks"},
-    "air": {"yellow": "Wait: smoky air, low visibility"},
-    "raptors": {"red": "Don't fly: hawks or eagles nesting nearby may attack",
-                "yellow": "Wait: hawks or eagles nearby, watch the sky"},
-}
+# tie-break when two hazards are equally bad: the more immediate danger first (same as the app)
+ORDER = ["powerlines", "raptors", "wind", "clouds", "visibility", "rain", "nesting", "crowd", "migration", "air"]
+MOCK_RISK = {"red": 82, "yellow": 55, "green": 12}
+
+
+def public_mock(z):
+    return {"lat": z["lat"], "lon": z["lon"], "radius_m": z["radius_m"], "risk": MOCK_RISK.get(z["level"], 55)}
 
 
 def score_spot(lat, lon, date, explain_it=False):
@@ -269,35 +278,38 @@ def score_spot(lat, lon, date, explain_it=False):
     level = worst["level"]
 
     # ---- score: bird risk + points for every other hazard, kept consistent with the level
-    score = bird_score + sum(POINTS.get(h["level"], 0) for h in known if h["type"] not in ("nesting",))
-    lo, hi = {"red": (60, 100), "yellow": (30, 59), "green": (0, 29)}[level]
-    score = max(lo, min(hi, score))               # the number always matches the colour
+    score = clamp(bird_score + sum(POINTS.get(h["level"], 0) for h in known if h["type"] != "nesting"), level)
 
     # ---- reasons + message
     extra = [h["detail"] for h in sorted(known, key=lambda h: -RANK[h["level"]])
              if h["level"] != "green" and h["type"] not in ("nesting",) and h["detail"] not in out["reasons"]]
     out["reasons"] = extra + [r for r in out["reasons"] if r not in extra]
-    if RANK[level] > RANK[bird_level]:
-        if worst["type"] in HAZARD_MESSAGE and level in HAZARD_MESSAGE[worst["type"]]:
-            out["message"] = HAZARD_MESSAGE[worst["type"]][level]
-        elif level == "red":
-            out["message"] = "Don't fly: below FAA weather minimums"
-        else:
-            out["message"] = "Wait: too windy or wet to fly safely"
-    if birds_unknown and level == "green":
-        out["message"] = "Clear to fly, but no bird data here: watch for birds"
+    # message = the score and its main driver, as a fact (no Go / Wait / Don't fly verdict)
+    drivers = sorted((h for h in known if h["level"] != "green"),
+                     key=lambda h: (-RANK[h["level"]], ORDER.index(h["type"]) if h["type"] in ORDER else 99))
+    if drivers:
+        out["message"] = f"Risk {score}/100: {drivers[0]['detail']}"
+    elif birds_unknown:
+        out["message"] = f"Risk {score}/100: no bird data here"
     elif not known:
-        out["message"] = "Wait: no data for this area right now"
-    out["level"], out["score"], out["bird_score"] = level, score, (None if birds_unknown else bird_score)
-    out["hazards"] = hazards
-    out["checks"] = checks                        # {"wildlife", "safety", "legal"} (kept for the UI)
+        out["message"] = f"Risk {score}/100: no data for this area right now"
+    else:
+        out["message"] = f"Risk {score}/100: no hazards found"
+    out.pop("level", None)                        # risk score only: no overall level / verdict
+    out["score"], out["bird_score"] = score, (None if birds_unknown else bird_score)
+    out["hazards"] = hazards                      # each row keeps a green/yellow/red/unknown dot
+    if not is_real(zones):
+        out["zones"] = [public_mock(z) for z in zones]
     try:
         # only when the birds decide it: moving 2 km can't fix weather, and lines are mapped separately
         area_min = max([w_min] + [h["level"] for h in known if h["type"] in ("migration", "air", "wind",
                                                                          "rain", "visibility", "clouds")],
                        key=lambda l: RANK[l])
         decided_locally = all(h["type"] in ("nesting", "raptors") for h in known if h["level"] == level)
-        out["safer_spot"] = safer_spot(lat, lon, date, level, area_min) if decided_locally else None
+        area_points = sum(POINTS.get(h["level"], 0) for h in known
+                          if h["type"] in ("migration", "air", "wind", "rain", "visibility", "clouds"))
+        out["safer_spot"] = (safer_spot(lat, lon, date, level, area_min, area_points)
+                             if decided_locally else None)
     except Exception as e:
         print("safer_spot failed:", e)
         out["safer_spot"] = None
@@ -317,7 +329,7 @@ def score_spot(lat, lon, date, explain_it=False):
     if explain_it:
         out["why"] = explain.why(out)             # U9: Gemini, only when the app asks
         if tiger.enabled():
-            tiger.log_check(*snap(lat, lon), out["level"], out["score"])   # blurred, app checks only
+            tiger.log_check(*snap(lat, lon), level, out["score"])   # blurred, app checks only
     return out
 
 
@@ -346,8 +358,8 @@ def zones(lat: float, lon: float, radius_km: float = 5,
           date: datetime.date = Query(default_factory=datetime.date.today)):
     found = get_zones(lat, lon, radius_km)
     if is_real(found):
-        return [scoring.public_zone(z, date) for z in found]   # level for that date, no species
-    return found
+        return [scoring.public_zone(z, date) for z in found]   # risk for that date, no species
+    return [public_mock(z) for z in found]
 
 
 @app.get("/check")
@@ -394,7 +406,7 @@ def trend(lat: float, lon: float, date: datetime.date = Query(default_factory=da
 
 @app.get("/stats/checks")
 def check_stats(hours: int = 24):
-    """How many pre-flight checks said Go / Wait / Don't fly per hour (Tiger Data)."""
+    """Pre-flight checks per hour with their average and highest risk score (Tiger Data)."""
     return tiger.check_stats(hours)
 
 

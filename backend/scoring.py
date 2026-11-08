@@ -1,5 +1,5 @@
 """
-U4: NestGuard risk score (0-100) and Go / Wait / Don't fly level.
+U4: NestGuard risk score (0-100). Bands (low/medium/high) are used for hazard dots only.
 
 For every blurred zone near the pilot:
   zone_risk = proximity x amount x recency x season x group
@@ -111,10 +111,10 @@ def nesting_nearby(lat, lon, date, zones, km=2.0):
 
 
 def public_zone(zone, date):
-    """Zone as the app/device sees it, with a level for this date (no species lists)."""
+    """Zone as the app/device sees it, with a risk score (0-100) for this date (no species lists)."""
     r, _ = zone_risk(zone, date)
     return {"lat": zone["lat"], "lon": zone["lon"], "radius_m": zone.get("radius_m", 500),
-            "level": level_for(round(r * 100))}
+            "risk": round(r * 100)}
 
 
 def score(lat, lon, date, zones, weather_mult=1.0, weather_reasons=()):
