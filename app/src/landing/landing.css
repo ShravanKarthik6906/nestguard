@@ -173,3 +173,15 @@ svg .wv { transform-box: fill-box; }
   .radar text { font-size: 18px; }
 }
 @media (prefers-reduced-motion: reduce) { .wv { opacity: 1 !important; } .radar .ray { opacity: 0.55; } }
+
+/* logo (top left): drone mark + KNOW FLY ZONE with the silent K and W in amber; same 26 px height as the old text */
+.lnav .wordmark.logo { display: inline-flex; align-items: center; gap: 9px; height: 26.34375px; }
+.lnav .logo-mark { display: block; width: 35px; height: 26px; flex: none; }
+.lnav .logo-word { font-family: 'B612', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: 0.08em; color: var(--text); white-space: nowrap; }
+.lnav .logo-word .silent { color: #d99a1e; }
+@media (max-width: 640px) {
+  /* phones: same 108 px width as the old text, so nothing else in the bar moves */
+  .lnav .wordmark.logo { width: 107.953125px; flex: none; gap: 4px; overflow: hidden; }
+  .lnav .logo-mark { width: 22px; height: 17px; }
+  .lnav .logo-word { font-size: 9.5px; letter-spacing: 0.02em; }
+}
