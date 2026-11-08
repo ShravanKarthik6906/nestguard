@@ -261,7 +261,7 @@ function renderSafer(r, hz) {
   const placed = sp && Number.isFinite(sp.lat) && Number.isFinite(sp.lon)
   setSaferSpot(placed ? sp : null, () => goToSafer(sp))
   if (sp) {
-    $('r-safer').innerHTML = `<p class="safer-t"><b>Lower-risk spot nearby</b> <span class="mono">${esc(sp.label || `${sp.distance_km} km ${sp.direction}: risk ${sp.score}`)}</span></p>` +
+    $('r-safer').innerHTML = `<p class="safer-t"><b>Lower-risk spot nearby</b> <span class="mono">${esc(sp.label || `${sp.distance_km} km ${sp.direction}: risk ${sp.score}`)}</span>${sp.note ? `<span class="safer-n">${esc(sp.note)}</span>` : ''}</p>` +
       (placed ? '<button class="btn" type="button" id="safer-go">Check this spot</button>' : '')
     if (placed) $('safer-go').addEventListener('click', () => goToSafer(sp))
     return

@@ -176,43 +176,64 @@ def best_time(lat, lon, date, base_risk, nesting_until, floor="green"):
 DIRECTIONS = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"]
 
 
-def safer_spot(lat, lon, date, level, area_min, area_points=0):
-    """Nearest nearby spot (0.5-3 km, 8 directions) in a lower risk band. area_min = the band of
-    hazards that cover the whole area (weather, migration, air): moving 3 km can't beat those.
-    area_points = their score points, so the spot's risk score is comparable to this one's."""
-    if level == "green" or RANK[area_min] >= RANK[level]:
-        return None                                    # moving won't fix area-wide hazards
+def safer_spot(lat, lon, date, level, area_min, area_points=0, min_drop=5):
+    """Nearest nearby spot (0.5-3 km, 8 directions) with lower risk.
+    First choice: the nearest spot in a lower risk band. When hazards that cover the whole area
+    (weather, migration, air; area_min) keep every nearby spot in the same band, fall back to the
+    nearest spot whose score is at least `min_drop` points lower because of local factors (birds,
+    hawks), with a note saying the area-wide hazard still applies.
+    area_points = the area-wide hazards' score points, so the spot's score is comparable to this one's.
+    Spots are compared on birds + hawks + area-wide hazards (power lines and buildings are not
+    rechecked at each candidate, so this is only called when those are not a concern here)."""
+    if level == "green":
+        return None
     zones = get_zones(lat, lon, 8)
     if not is_real(zones):
         return None
-    best = None
+
+    def rate(clat, clon):
+        r = scoring.score(clat, clon, date, zones)
+        raptor_lvl = ("red" if "nesting season" in r["raptor_alert"] else "yellow") if r["raptor_alert"] else "green"
+        lvl = max(r["level"], raptor_lvl, area_min, key=lambda l: RANK[l])
+        return lvl, clamp(r["score"] + POINTS.get(raptor_lvl, 0) + area_points, lvl)
+
+    _, here = rate(lat, lon)                           # this spot, measured the same way
+    lower_band = same_band = None
     for km in (0.5, 1, 1.5, 2, 3):
         for i, name in enumerate(DIRECTIONS):
             ang = math.radians(45 * i)
             clat = lat + km / 111.0 * math.cos(ang)
             clon = lon + km / (111.0 * math.cos(math.radians(lat))) * math.sin(ang)
-            r = scoring.score(clat, clon, date, zones)
-            raptor_lvl = ("red" if "nesting season" in r["raptor_alert"] else "yellow") if r["raptor_alert"] else "green"
-            cand_level = max(r["level"], raptor_lvl, area_min, key=lambda l: RANK[l])
-            cand_score = clamp(r["score"] + POINTS.get(raptor_lvl, 0) + area_points, cand_level)
-            if RANK[cand_level] < RANK[level] and (best is None or RANK[cand_level] < best["_band"]
-                                                   or (RANK[cand_level] == best["_band"]
-                                                       and cand_score < best["score"]
-                                                       and km == best["distance_km"])):
-                best = {"lat": round(clat, 3), "lon": round(clon, 3), "distance_km": km,
-                        "direction": name, "score": cand_score, "_band": RANK[cand_level],
-                        "label": f"{km:g} km {name}: risk {cand_score}"}
-        if best and best["_band"] == 0:
-            break                                      # nearest low-risk spot found; don't look farther
-    if best:
-        best.pop("_band")
+            cand_level, cand_score = rate(clat, clon)
+            spot = {"lat": round(clat, 3), "lon": round(clon, 3), "distance_km": km, "direction": name,
+                    "score": cand_score, "_band": RANK[cand_level], "label": f"{km:g} km {name}: risk {cand_score}"}
+            if RANK[cand_level] < RANK[level]:
+                if lower_band is None or (spot["_band"], spot["score"]) < (lower_band["_band"], lower_band["score"]):
+                    lower_band = spot
+            elif lower_band is None and cand_score <= here - min_drop:
+                nearer = same_band is None or km < same_band["distance_km"]
+                if nearer or (km == same_band["distance_km"] and cand_score < same_band["score"]):
+                    same_band = spot                   # nearest ring, lowest score in it
+        if lower_band:
+            break                                      # nearest lower-band ring found; don't look farther
+    best = lower_band or same_band
+    if not best:
+        return None
+    best.pop("_band")
+    if best is same_band:
+        best["note"] = "Fewer birds there, but the hazards that cover the whole area still apply."
     return best
 
 
 def clamp(score, level):
-    """Keep the score inside its band, so the number always agrees with the worst hazard."""
+    """Keep the score inside its band, so the number always agrees with the worst hazard.
+    A raw score below the band is spread across the band (not pinned to its floor), so two spots
+    with different risk get different numbers: before, most of November read exactly 30 because
+    migration is yellow everywhere. Monotonic: a riskier raw score never gets a lower number, and
+    green scores are unchanged (so the overall score is never below the bird-only score)."""
     lo, hi = {"red": (60, 100), "yellow": (30, 59), "green": (0, 29)}[level]
-    return max(lo, min(hi, score))
+    spread = lo + (hi - lo) * min(max(score, 0), 100) / 100
+    return int(round(min(hi, max(score, spread))))
 
 
 POINTS = {"yellow": 15, "red": 40}          # extra score points per non-bird hazard
@@ -305,11 +326,13 @@ def score_spot(lat, lon, date, explain_it=False):
         area_min = max([w_min] + [h["level"] for h in known if h["type"] in ("migration", "air", "wind",
                                                                          "rain", "visibility", "clouds")],
                        key=lambda l: RANK[l])
-        decided_locally = all(h["type"] in ("nesting", "raptors") for h in known if h["level"] == level)
+        # candidates are rated on birds, hawks and area-wide hazards; power lines and buildings are
+        # not rechecked there, so only suggest a spot when those aren't a concern here
+        local_other = any(h["level"] in ("yellow", "red") for h in known if h["type"] in ("powerlines", "crowd"))
         area_points = sum(POINTS.get(h["level"], 0) for h in known
                           if h["type"] in ("migration", "air", "wind", "rain", "visibility", "clouds"))
         out["safer_spot"] = (safer_spot(lat, lon, date, level, area_min, area_points)
-                             if decided_locally else None)
+                             if not local_other and not birds_unknown else None)
     except Exception as e:
         print("safer_spot failed:", e)
         out["safer_spot"] = None

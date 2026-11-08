@@ -97,6 +97,7 @@ body.pf {
 .pf .safer { margin-top: 14px; font-size: 14px; }
 .pf .safer-t { margin: 0 0 8px; color: #c3c9d0; }
 .pf .safer-t b { color: var(--text); margin-right: 6px; }
+.pf .safer-n { display: block; margin-top: 2px; color: var(--muted); }
 .pf .safer .btn { padding: 7px 12px; font-size: 13px; }
 /* demo stops on the map */
 .pf .stop-icon { background: none; border: 0; }
