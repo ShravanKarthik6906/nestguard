@@ -459,6 +459,8 @@ class Device:
                 self.demo = (float(d["lat"]), float(d["lon"]))
                 self.demo_date = d.get("date")
             elif not self.local_demo:
+                if self.demo is not None:
+                    self.handoff = None              # demo ended: forget the demo's answer
                 self.demo, self.demo_date = None, None   # backend says demo is off
         except Exception:
             pass                                     # endpoint optional
