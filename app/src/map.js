@@ -11,21 +11,39 @@ const handlers = { zone: null, line: null }
 export function onFeatureClick(kind, fn) { handlers[kind] = fn }
 
 // Fallback: standard OpenStreetMap tiles, darkened with CSS (.osm-dark in style.css)
-const osmLayer = () => L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19, className: 'osm-dark', attribution: '&copy; OpenStreetMap contributors',
-})
+const osmLayer = () => retryTiles(L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19, className: 'osm-dark', keepBuffer: 4, attribution: '&copy; OpenStreetMap contributors',
+}))
+
+// Slow or busy networks drop some tiles: retry each failed one up to 3 times (after 0.8, 1.6, 2.4 s)
+// instead of leaving a black square. Leaflet's load handler stays attached, so a retry that succeeds
+function retryTiles(layer) {
+  layer.on('tileerror', (e) => {
+    const img = e.tile, n = Number(img.dataset.retry || 0)
+    if (n >= 3) return
+    img.dataset.retry = String(n + 1)
+    e.retrying = true
+    setTimeout(() => {
+      const base = img.src.replace(/[?&]retry=\d+$/, '')
+      img.src = `${base}${base.includes('?') ? '&' : '?'}retry=${n + 1}`
+    }, 800 * (n + 1))
+  })
+  return layer
+}
 
 // Mapbox satellite imagery with streets; switches to OpenStreetMap if Mapbox keeps failing
 function addBaseMap() {
   if (!MAPBOX_TOKEN) return osmLayer().addTo(map)
   const mb = L.tileLayer(`https://api.mapbox.com/styles/v1/${MAPBOX_STYLE}/tiles/512/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`, {
-    maxZoom: 20, tileSize: 512, zoomOffset: -1, className: 'sat',
+    maxZoom: 20, tileSize: 512, zoomOffset: -1, className: 'sat', keepBuffer: 4,
     attribution: '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   }).addTo(map)
   let errors = 0, loaded = 0
   mb.on('tileload', () => { loaded++ })
-  mb.on('tileerror', () => {
-    if (++errors >= 4 && loaded === 0) { map.removeLayer(mb); osmLayer().addTo(map) }
+  retryTiles(mb)
+  mb.on('tileerror', (e) => {
+    if (e.retrying) return
+    if (++errors >= 4 && loaded === 0) { map.removeLayer(mb); osmLayer().addTo(map) }   // Mapbox not working at all
   })
 }
 
