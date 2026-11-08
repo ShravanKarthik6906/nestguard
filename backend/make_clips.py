@@ -10,6 +10,7 @@ costs almost nothing. Writes app/public/audio/*.mp3 and app/public/audio/clips.j
                                        -> also adds the exact messages /check gives
                                           for the presets and the demo walk
 """
+import datetime
 import json
 import pathlib
 import re
@@ -19,6 +20,7 @@ import urllib.request
 
 from speak import fish_tts
 
+APP_HEIGHT_FT = 200      # app/src/preflight/app.js heightFt() default
 OUT = pathlib.Path(__file__).parent.parent / "app" / "public" / "audio"
 
 # Fallbacks the app plays if /speak is unreachable (one per risk band).
@@ -49,7 +51,10 @@ def spoken(score, message):
 def from_api(api):
     out = set()
     for lat, lon, date in PRESETS + WALK:
-        q = {"lat": lat, "lon": lon} | ({"date": date} if date else {})
+        # same query as the app: 4 decimals, an explicit date (this computer's "today", like the
+        # browser) and the app's default planned height, so the spoken text matches exactly
+        q = {"lat": f"{lat:.4f}", "lon": f"{lon:.4f}", "date": date or datetime.date.today().isoformat(),
+             "height_ft": APP_HEIGHT_FT}
         print(f"checking {lat}, {lon} {date or 'today'} ...", end=" ", flush=True)
         try:
             with urllib.request.urlopen(f"{api.rstrip('/')}/check?{urllib.parse.urlencode(q)}", timeout=30) as r:
@@ -57,7 +62,7 @@ def from_api(api):
         except Exception as e:
             print("failed:", e)
             continue
-        print(d["level"])
+        print(f'risk {d.get("score")}')
         out.add(spoken(d.get("score"), d.get("message")))
     return sorted(out)
 
