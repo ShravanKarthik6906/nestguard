@@ -373,7 +373,7 @@ class NestGuard:
 
     # ===================== LCD =====================
     def _detect_lcd(self):
-        if 0x3E in self.found:
+        if 0x3E in self.found or 0x62 in self.found or 0x30 in self.found:   # V4 text chip often hides from scans
             self.lcd_type, self.lcd_addr = "GROVE", 0x3E
             if 0x62 in self.found:
                 self.rgb_addr = 0x62
