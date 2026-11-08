@@ -164,11 +164,11 @@ def best_time(lat, lon, date, base_risk, nesting_until):
 DIRECTIONS = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"]
 
 
-def safer_spot(lat, lon, date, level, weather_min):
-    """Nearest nearby spot (0.5-3 km, 8 directions) with a better wildlife level, using the same
-    weather (it is the same area). None when it's already Go, or when the weather is the problem."""
-    if level == "green" or RANK[weather_min] >= RANK[level]:
-        return None                                    # moving won't fix the weather
+def safer_spot(lat, lon, date, level, area_min):
+    """Nearest nearby spot (0.5-3 km, 8 directions) with a better level. area_min = the level of
+    hazards that cover the whole area (weather, migration, air): moving 3 km can't beat those."""
+    if level == "green" or RANK[area_min] >= RANK[level]:
+        return None                                    # moving won't fix area-wide hazards
     zones = get_zones(lat, lon, 8)
     if not is_real(zones):
         return None
@@ -179,7 +179,8 @@ def safer_spot(lat, lon, date, level, weather_min):
             clat = lat + km / 111.0 * math.cos(ang)
             clon = lon + km / (111.0 * math.cos(math.radians(lat))) * math.sin(ang)
             r = scoring.score(clat, clon, date, zones)
-            cand_level = max(r["level"], weather_min, key=lambda l: RANK[l])
+            raptor_lvl = ("red" if "nesting season" in r["raptor_alert"] else "yellow") if r["raptor_alert"] else "green"
+            cand_level = max(r["level"], raptor_lvl, area_min, key=lambda l: RANK[l])
             if RANK[cand_level] < RANK[level] and (best is None or RANK[cand_level] < RANK[best["level"]]
                                                    or (cand_level == best["level"] and r["score"] < best["score"]
                                                        and km == best["distance_km"])):
@@ -267,7 +268,11 @@ def score_spot(lat, lon, date, explain_it=False):
     out["checks"] = checks                        # {"wildlife", "safety", "legal"} (kept for the UI)
     try:
         # only when the birds decide it: moving 2 km can't fix weather, and lines are mapped separately
-        out["safer_spot"] = safer_spot(lat, lon, date, bird_level, w_min) if bird_level == level else None
+        area_min = max([w_min] + [h["level"] for h in known if h["type"] in ("migration", "air", "wind",
+                                                                         "rain", "visibility", "clouds")],
+                       key=lambda l: RANK[l])
+        decided_locally = all(h["type"] in ("nesting", "raptors") for h in known if h["level"] == level)
+        out["safer_spot"] = safer_spot(lat, lon, date, level, area_min) if decided_locally else None
     except Exception as e:
         print("safer_spot failed:", e)
         out["safer_spot"] = None
