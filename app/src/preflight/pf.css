@@ -46,7 +46,7 @@ body.pf {
 .pf .back { background: none; border: 0; color: var(--muted); font: inherit; font-size: 14px; padding: 0; cursor: pointer; margin-bottom: 18px; }
 .pf .back::before { content: ''; display: inline-block; width: 7px; height: 7px; border-left: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); margin-right: 8px; vertical-align: 1px; }
 .pf .back:hover { color: var(--text); }
-.pf input[type='date'], .pf .search input { width: 100%; font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; }
+.pf input[type='date'], .pf select, .pf .search input { width: 100%; font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; }
 .pf .ic { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 
 /* 1. setup */
@@ -54,6 +54,10 @@ body.pf {
 .pf .setup h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.15; margin: 0 0 10px; }
 .pf .lead { color: var(--muted); font-size: 16px; margin: 0 0 32px; }
 .pf .field { margin-bottom: 20px; }
+.pf .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pf .field-row .field { min-width: 0; }
+.pf select { appearance: none; -webkit-appearance: none; cursor: pointer; padding-right: 34px; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 18px) 52%, calc(100% - 13px) 52%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }
+@media (max-width: 420px) { .pf .field-row { grid-template-columns: 1fr; gap: 0; } }
 .pf .field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
 .pf .search { position: relative; }
 .pf .search .ic { position: absolute; left: 14px; top: 15px; color: var(--muted); }

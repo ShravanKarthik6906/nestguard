@@ -6,8 +6,15 @@ function today() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
+// Planned flight height from the app's link (/fly/?lat=..&lon=..&height=200), so the score matches the app.
+const PLANNED_HEIGHT_FT = (() => {
+  const h = Number(new URLSearchParams(window.location.search).get('height'))
+  return Number.isFinite(h) && h >= 10 && h <= 400 ? Math.round(h) : null
+})()
+
 export async function getKnowFlyZoneCheck(lat, lon, signal) {
-  const url = `/check?lat=${encodeURIComponent(lat.toFixed(5))}&lon=${encodeURIComponent(lon.toFixed(5))}&date=${today()}`
+  const height = PLANNED_HEIGHT_FT ? `&height_ft=${PLANNED_HEIGHT_FT}` : ''
+  const url = `/check?lat=${encodeURIComponent(lat.toFixed(5))}&lon=${encodeURIComponent(lon.toFixed(5))}&date=${today()}${height}`
   const response = await fetch(url, { signal })
   if (!response.ok) throw new Error(`KnowFlyZone check failed (HTTP ${response.status})`)
   const data = await response.json()

@@ -17,6 +17,8 @@ import os
 import pathlib
 import time
 
+from typing import Optional
+
 from fastapi import Body, FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -132,7 +134,7 @@ def hour_label(when, today):
     return day, when.strftime("%I %p").lstrip("0")
 
 
-def best_time(lat, lon, date, base_risk, nesting_until, floor="green"):
+def best_time(lat, lon, date, base_risk, nesting_until, floor="green", height_ft=weather.DEFAULT_HEIGHT_FT):
     """U9: today -> scan from now to the end of tomorrow and report the first daylight window
     with the best level; other dates -> that day's daylight hours."""
     local_today = weather.local_now(lat, lon)
@@ -147,7 +149,7 @@ def best_time(lat, lon, date, base_risk, nesting_until, floor="green"):
         return None
     rated = []
     for when, w, _ in hs:
-        mult, _, w_min, _ = weather.assess(w)
+        mult, _, w_min, _ = weather.assess(w, height_ft=height_ft)
         lvl = scoring.level_for(round(min(1.0, base_risk * mult) * 100))
         rated.append((when, max(lvl, w_min, floor, key=lambda l: RANK[l])))   # floor = hazards that last all day
     best = min(RANK[l] for _, l in rated)
@@ -285,13 +287,13 @@ def public_mock(z):
     return {"lat": z["lat"], "lon": z["lon"], "radius_m": z["radius_m"], "risk": MOCK_RISK.get(z["level"], 55)}
 
 
-def score_spot(lat, lon, date, explain_it=False):
+def score_spot(lat, lon, date, explain_it=False, height_ft=weather.DEFAULT_HEIGHT_FT):
     zones = get_zones(lat, lon, 5)
     # no zones AND no complete bird data for this area -> birds are "unknown", not green
     birds_unknown = not zones and not live_zones.has_data(lat, lon)
     w = weather.conditions(lat, lon, date)
     eggs = scoring.nesting_nearby(lat, lon, date, zones) if is_real(zones) else True
-    mult, w_reasons, w_min, checks = weather.assess(w, egg_season=eggs)                  # U5/U6
+    mult, w_reasons, w_min, checks = weather.assess(w, egg_season=eggs, height_ft=height_ft)  # U5/U6
     trend = tiger.trend(lat, lon, date) if tiger.enabled() else None                    # Tiger Data
     trend_reason = []
     # only claim a rise when the earlier weeks have a real baseline (eBird gives us 30 days)
@@ -324,7 +326,7 @@ def score_spot(lat, lon, date, explain_it=False):
                {"type": "raptors",
                 "level": ("red" if raptor and "nesting season" in raptor else "yellow") if raptor else "green",
                 "detail": "Hawk or eagle sightings within 1 km" if raptor else "No hawks or eagles seen nearby"}]
-    hazards += other + weather.hazards(w)
+    hazards += other + weather.hazards(w, height_ft)
     if birds_unknown:
         for h in hazards:
             if h["type"] in ("nesting", "raptors", "migration"):
@@ -371,7 +373,7 @@ def score_spot(lat, lon, date, explain_it=False):
         lasting = max(["green"] + [h["level"] for h in known
                                    if h["type"] in ("raptors", "powerlines", "crowd", "migration", "air")],
                       key=lambda l: RANK[l])
-        out["best_time"] = best_time(lat, lon, date, out.pop("base_risk"), out.pop("nesting_until"), lasting)
+        out["best_time"] = best_time(lat, lon, date, out.pop("base_risk"), out.pop("nesting_until"), lasting, height_ft)
     except Exception as e:
         print("best_time failed:", e)
         out["best_time"] = None
@@ -380,6 +382,7 @@ def score_spot(lat, lon, date, explain_it=False):
     if trend and trend.get("before", 0) < 10:
         trend = dict(trend, ratio=None)           # no real baseline (eBird gives 30 days): no ratio
     out["trend"] = trend                          # Tiger Data: weekly sightings near here
+    out["height_ft"] = height_ft                  # planned flight height the clouds were checked against
     if explain_it:
         out["why"] = explain.why(out)             # U9: Gemini, only when the app asks
     return out
@@ -403,8 +406,8 @@ if ZONES is not None:
         CHECK_CACHE = None
 
 
-def _cache_key(lat, lon, date):
-    return f"{round(lat, 4)}:{round(lon, 4)}:{date.isoformat()}"
+def _cache_key(lat, lon, date, height_ft=weather.DEFAULT_HEIGHT_FT):
+    return f"{round(lat, 4)}:{round(lon, 4)}:{date.isoformat()}:h{height_ft}"
 
 
 def _cache_get(key):
@@ -435,11 +438,11 @@ def _cache_put(key, date, out):
             print("check cache write failed:", e)
 
 
-def cached_check(lat, lon, date, explain_it=False, log=True):
-    key = _cache_key(lat, lon, date)
+def cached_check(lat, lon, date, explain_it=False, log=True, height_ft=weather.DEFAULT_HEIGHT_FT):
+    key = _cache_key(lat, lon, date, height_ft)
     out = _cache_get(key)
     if out is None:
-        out = score_spot(lat, lon, date, explain_it=explain_it)
+        out = score_spot(lat, lon, date, explain_it=explain_it, height_ft=height_ft)
         _cache_put(key, date, out)
     elif explain_it and not out.get("why"):
         out = dict(out, why=explain.why(out))     # cached without the sentence: add it once
@@ -518,13 +521,21 @@ def zones(lat: float, lon: float, radius_km: float = 5,
 
 @app.get("/check")
 def check(lat: float, lon: float, date: datetime.date = Query(default_factory=datetime.date.today),
-          explain: bool = False):
+          explain: bool = False, height_ft: Optional[int] = Query(None, ge=10, le=400)):
     """explain=true adds a Gemini "why" sentence (the app uses it; the device doesn't).
     An app check (explain=true) also becomes the device's location, so the device shows the
     spot the user just checked. The device's own checks never set explain, so no loop."""
+    # height_ft = how high the pilot plans to fly (default 400 ft, the legal limit); low clouds only
+    # count when they're under that height + 500 ft. The device doesn't send one: when it checks the
+    # spot the app just set, it uses the app's height, so both show the same score.
+    if height_ft is None:
+        d = device["demo"] or {}
+        same_spot = d.get("lat") is not None and round(float(d["lat"]), 4) == round(lat, 4) \
+            and round(float(d["lon"]), 4) == round(lon, 4)
+        height_ft = int(d.get("height_ft") or weather.DEFAULT_HEIGHT_FT) if same_spot else weather.DEFAULT_HEIGHT_FT
     if explain:
-        device["demo"] = {"lat": lat, "lon": lon, "date": date.isoformat(), "from": "app"}
-    return cached_check(lat, lon, date, explain_it=explain)
+        device["demo"] = {"lat": lat, "lon": lon, "date": date.isoformat(), "from": "app", "height_ft": height_ft}
+    return cached_check(lat, lon, date, explain_it=explain, height_ft=height_ft)
 
 
 # --- device routes (the Pi polls these)

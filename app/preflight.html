@@ -48,9 +48,21 @@
             <div><b id="sel-name"></b><span id="sel-coords" class="mono"></span></div>
           </div>
 
-          <div class="field">
-            <label for="date">Planned date</label>
-            <input id="date" type="date" />
+          <div class="field-row">
+            <div class="field">
+              <label for="date">Planned date</label>
+              <input id="date" type="date" />
+            </div>
+            <div class="field">
+              <label for="height">How high will you fly?</label>
+              <select id="height">
+                <option value="50">Up to 50 ft</option>
+                <option value="100">Up to 100 ft</option>
+                <option value="200" selected>Up to 200 ft</option>
+                <option value="300">Up to 300 ft</option>
+                <option value="400">Up to 400 ft (legal limit)</option>
+              </select>
+            </div>
           </div>
 
           <button id="go" class="btn primary big" type="button" disabled>Check my location</button>

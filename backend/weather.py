@@ -7,7 +7,8 @@ assess(w) -> (risk_multiplier, reasons, minimum_level, checks)
   U5 wildlife multiplier: cold (< 45 F) or rain -> x1.3 (birds stay on nests, eggs chill faster)
   U6 drone safety:  gusts >= 25 mph or wind at 80 m >= 20 mph or heavy rain -> at least "yellow" (Wait)
   U6 legal (FAA Part 107): visibility < 3 statute miles -> "red";
-        cloud base under 900 ft (400 ft max altitude + 500 ft below clouds) -> "red"
+        cloud base under the planned height + 500 ft (default 200 ft -> 700 ft; 400 ft max -> 900 ft) -> "red"
+  Forecasts for today and later are re-fetched every 30 min.
   Cloud base estimate: (temp F - dew point F) / 4.4 x 1000 ft, used when low cloud cover >= 50 %.
 """
 import datetime
@@ -25,7 +26,15 @@ HOURLY = ["temperature_2m", "dew_point_2m", "precipitation", "wind_speed_80m",
 COLD_F, RAIN_MM, HEAVY_RAIN_MM = 45, 0.2, 2.5
 GUST_MPH, WIND80_MPH = 25, 20
 MIN_VIS_M = 4828                    # 3 statute miles
-MIN_CLOUD_BASE_FT = 900
+MIN_CLOUD_BASE_FT = 900          # for a flight up to 400 ft (the legal limit)
+DEFAULT_HEIGHT_FT = 200          # planned height when none is given: a typical hobby flight (100-200 ft)
+FRESH_S = 30 * 60                # today's and future forecasts are re-fetched after 30 min
+CLOUD_MARGIN_FT = 200            # clouds within 200 ft above the limit: medium (little room for error)
+
+
+def cloud_need_ft(height_ft=DEFAULT_HEIGHT_FT):
+    """Lowest safe cloud base for a flight up to height_ft: stay 500 ft below the clouds."""
+    return height_ft + 500
 
 try:
     _cache = json.loads(CACHE_FILE.read_text())
@@ -65,17 +74,25 @@ def _day(lat, lon, date):
     # fewer requests (Open-Meteo rate limits). A failed cell is retried after 60 s, not every check.
     lat, lon = round(lat, 1), round(lon, 1)
     key = f"{lat},{lon},{date.isoformat()}"
-    if key not in _cache:
-        import time as _t
+    import time as _t
+    hit = _cache.get(key)
+    # past days never change; today's and future forecasts get re-fetched every 30 min so the
+    # score follows the latest forecast (entries saved before this had no time: re-fetch them)
+    stale = hit is not None and date >= datetime.date.today() - datetime.timedelta(days=1) and \
+        _t.time() - ((hit or {}).get("_fetched") or 0) > FRESH_S
+    if hit is None or stale:
         if _t.time() < _fail_until.get(key, 0):
-            return None
+            return hit if hit and "hourly" in hit else None      # keep the older forecast meanwhile
         try:
-            _cache[key] = _fetch(lat, lon, date)
+            data = _fetch(lat, lon, date)
+            if isinstance(data, dict):
+                data["_fetched"] = _t.time()
+            _cache[key] = data
             _save_cache()
         except Exception as e:
             print("weather fetch failed:", e)
             _fail_until[key] = _t.time() + 60
-            return None
+            return hit if hit and "hourly" in hit else None      # older forecast beats none
     data = _cache[key]
     return data if data and "hourly" in data else None
 
@@ -117,7 +134,7 @@ def conditions(lat, lon, date):
     return hs[min(hour, len(hs) - 1)][1]
 
 
-def assess(w, egg_season=True):
+def assess(w, egg_season=True, height_ft=DEFAULT_HEIGHT_FT):
     """Returns (multiplier, reasons, minimum level, checks). egg_season=False drops the
     cold/rain egg-chilling factor (no eggs outside nesting season)."""
     checks = {"safety": "green", "legal": "green"}
@@ -155,9 +172,13 @@ def assess(w, egg_season=True):
         checks["legal"] = "red"
     if low is not None and low >= 50 and t is not None and dew is not None:
         base_ft = max(0, (t - dew) / 4.4 * 1000)
-        if base_ft < MIN_CLOUD_BASE_FT:
-            reasons.append(f"Cloud base about {base_ft:.0f} ft: FAA needs 500 ft below clouds")
+        if base_ft < cloud_need_ft(height_ft):
+            reasons.append(f"Cloud base about {base_ft:.0f} ft: too low to fly at {height_ft} ft and stay 500 ft below clouds")
             checks["legal"] = "red"
+        elif base_ft < cloud_need_ft(height_ft) + CLOUD_MARGIN_FT:
+            reasons.append(f"Cloud base about {base_ft:.0f} ft: close to the limit for a {height_ft} ft flight")
+            if checks["safety"] == "green":
+                checks["safety"] = "yellow"
 
     if bird_note:
         reasons.append(bird_note)                     # safety/legal reasons come first
@@ -166,7 +187,7 @@ def assess(w, egg_season=True):
     return mult, reasons, minimum, checks
 
 
-def hazards(w):
+def hazards(w, height_ft=DEFAULT_HEIGHT_FT):
     """Weather as hazard entries for the /check breakdown (same rules as assess())."""
     if not w:
         return [{"type": "weather", "level": "unknown", "detail": "Weather unavailable for this date"}]
@@ -192,11 +213,17 @@ def hazards(w):
     low, dew = w.get("cloud_cover_low"), w.get("dew_point_2m")
     if low is not None and t is not None and dew is not None:
         base = max(0, (t - dew) / 4.4 * 1000)
-        too_low = low >= 50 and base < MIN_CLOUD_BASE_FT
-        out.append({"type": "clouds", "level": "red" if too_low else "green",
-                    "detail": f"Cloud base about {base:.0f} ft" + (" (FAA needs 500 ft below clouds)" if too_low else "")
+        need = cloud_need_ft(height_ft)                # planned height + 500 ft below the clouds
+        too_low = low >= 50 and base < need
+        close = low >= 50 and not too_low and base < need + CLOUD_MARGIN_FT
+        out.append({"type": "clouds", "level": "red" if too_low else "yellow" if close else "green",
+                    "detail": (f"Cloud base about {base:.0f} ft" +
+                               (f" (a {height_ft} ft flight needs {need} ft)" if too_low else
+                                f" (close to the {need} ft limit for a {height_ft} ft flight)" if close else ""))
                     if low >= 50 else f"Low clouds {low:.0f}%",
-                    # red: how far below the limit; green: low cloud cover x how close the base is to the limit
-                    "sev": (MIN_CLOUD_BASE_FT - base) / MIN_CLOUD_BASE_FT if too_low else
-                           low / 100 * (3000 - base) / (3000 - MIN_CLOUD_BASE_FT)})
+                    # red: how far below the limit; yellow: how little room is left above it;
+                    # green: low cloud cover x how close the base is to the limit
+                    "sev": min(1.0, (need - base) / 300) if too_low else      # 300+ ft short = worst
+                           (need + CLOUD_MARGIN_FT - base) / CLOUD_MARGIN_FT if close else
+                           max(0.0, low / 100 * (3000 - base) / (3000 - need - CLOUD_MARGIN_FT))})
     return out

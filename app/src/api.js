@@ -84,9 +84,13 @@ function mockCheck(lat, lon, date) {
 
 // timeoutMs is optional: the pre-flight tool waits longer, because the first check in a new area
 // fetches birds, weather and power lines live and can take 10-20 seconds.
-export async function check(lat, lon, date, timeoutMs = TIMEOUT_MS) {
+// heightFt (optional) = how high the pilot plans to fly; low clouds count against that height.
+// Without it the backend uses its default (200 ft, a typical hobby flight).
+const hq = (heightFt) => (heightFt ? `&height_ft=${Math.round(heightFt)}` : '')
+
+export async function check(lat, lon, date, timeoutMs = TIMEOUT_MS, heightFt) {
   if (USE_MOCK) return { data: mockCheck(lat, lon, date), source: 'mock' }
-  return getJSON(`/check?lat=${r4(lat)}&lon=${r4(lon)}&date=${date}`, timeoutMs)
+  return getJSON(`/check?lat=${r4(lat)}&lon=${r4(lon)}&date=${date}${hq(heightFt)}`, timeoutMs)
 }
 
 // Tell the device where to "be". {} stops demo mode. Not cached; skipped in mock mode.
@@ -102,9 +106,9 @@ export async function setDemo(body) {
 }
 
 // Gemini's one-sentence "why". Separate, slower call so the banner never waits for it.
-export async function explain(lat, lon, date) {
+export async function explain(lat, lon, date, heightFt) {
   if (USE_MOCK) return { data: { why: null }, source: 'mock' }
-  return getJSON(`/check?lat=${r4(lat)}&lon=${r4(lon)}&date=${date}&explain=true`, 20000)
+  return getJSON(`/check?lat=${r4(lat)}&lon=${r4(lon)}&date=${date}&explain=true${hq(heightFt)}`, 20000)
 }
 
 // Latest device readings. Never cached: an old reading must not look live.

@@ -156,6 +156,8 @@ function runFromSetup() {
 }
 
 // ---------- the check (same calls and rules as before)
+// planned flight height: low clouds are checked against it (+500 ft below the clouds)
+const heightFt = () => Number($('height').value) || 200
 let checkId = 0
 async function runCheck({ speak = true, why = speak } = {}) {
   const { lat, lon } = state.spot
@@ -165,7 +167,7 @@ async function runCheck({ speak = true, why = speak } = {}) {
   renderLoading()
   if (state.view !== 'explore') map.setView([lat, lon], 14)
   try {
-    const { data, source, savedAt } = await check(lat, lon, $('date').value, 30000)
+    const { data, source, savedAt } = await check(lat, lon, $('date').value, 30000, heightFt())
     if (id !== checkId) return
     Object.assign(state, { result: data, source, savedAt })
     renderResult(data)
@@ -184,7 +186,7 @@ async function runCheck({ speak = true, why = speak } = {}) {
 async function loadWhy(id) {
   $('r-why').hidden = false; $('r-why').classList.add('loading'); $('r-why-t').textContent = ''
   try {
-    const { data } = await explain(state.spot.lat, state.spot.lon, $('date').value)
+    const { data } = await explain(state.spot.lat, state.spot.lon, $('date').value, heightFt())
     if (id !== checkId) return
     $('r-why').classList.remove('loading')
     if (data.why) $('r-why-t').textContent = data.why; else $('r-why').hidden = true
@@ -195,7 +197,7 @@ async function loadWhy(id) {
 let slowTimer
 const CONCERN = { red: 'High risk', yellow: 'Medium risk', green: 'Low risk', none: 'Score unavailable' }
 function renderLoading() {
-  $('res-h').textContent = `${state.spot.name || 'Selected spot'} · ${fmtDate($('date').value)}`
+  $('res-h').textContent = `${state.spot.name || 'Selected spot'} · ${fmtDate($('date').value)} · up to ${heightFt()} ft`
   $('r-assess').className = 'assess loading'
   $('r-concern').textContent = 'Checking'
   $('r-score').textContent = '--'; $('r-meter').style.width = '0'
@@ -427,7 +429,7 @@ function renderSpotSummary() {
   // opens the 3D flight simulator (its own page at /fly/) at this spot; not during the guided demo
   const fly = $('exp-fly')
   fly.hidden = !r || state.demo
-  if (r) fly.href = `/fly/?lat=${state.spot.lat.toFixed(5)}&lon=${state.spot.lon.toFixed(5)}`
+  if (r) fly.href = `/fly/?lat=${state.spot.lat.toFixed(5)}&lon=${state.spot.lon.toFixed(5)}&height=${heightFt()}`
   const sp = r && r.safer_spot
   const box = $('exp-safer')
   box.hidden = !r
@@ -458,7 +460,7 @@ map.on('click', async (e) => {
   state.spot = { lat, lon, name: `${lat.toFixed(4)}, ${lon.toFixed(4)}` }
   runCheck({ speak: true, why: true })
   state.spot.name = await placeName(lat, lon)
-  renderSpotSummary(); $('res-h').textContent = `${state.spot.name} · ${fmtDate($('date').value)}`
+  renderSpotSummary(); $('res-h').textContent = `${state.spot.name} · ${fmtDate($('date').value)} · up to ${heightFt()} ft`
 })
 
 // ---------- guided demo walkthrough (same route, checks and device updates as before)
