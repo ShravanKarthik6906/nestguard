@@ -5,6 +5,7 @@ import mockYellow from '../mock/check-yellow.json'
 import mockRed from '../mock/check-red.json'
 import mockBolsa from '../mock/check-bolsa.json'
 import mockTelemetry from '../mock/telemetry.json'
+import mockPowerlines from '../mock/powerlines.json'
 
 // Every call returns { data, source } where source is 'live', 'cached' or 'mock'.
 
@@ -85,4 +86,13 @@ export async function getTelemetry() {
   const res = await fetch('/device/telemetry', { cache: 'no-store', signal: AbortSignal.timeout(TIMEOUT_MS) })
   if (!res.ok) throw new Error('HTTP ' + res.status)
   return res.json()
+}
+
+// Power lines near a point: [{ coords: [[lat, lon], ...] }]. Public infrastructure, so exact lines are fine.
+export async function getPowerlines(lat, lon, radiusKm) {
+  if (USE_MOCK) {
+    const near = (line) => line.coords.some(([a, b]) => distM(lat, lon, a, b) <= (radiusKm + 1) * 1000)
+    return { data: mockPowerlines.filter(near), source: 'mock' }
+  }
+  return getJSON(`/powerlines?lat=${r4(lat)}&lon=${r4(lon)}&radius_km=${radiusKm}`)
 }

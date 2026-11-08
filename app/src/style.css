@@ -59,6 +59,9 @@ input[type='date'] {
 .sw.red { background: rgba(214, 69, 69, 0.3); border-color: var(--stop); }
 .sw.yellow { background: rgba(217, 154, 30, 0.3); border-color: var(--wait); }
 .sw.green { background: rgba(47, 158, 91, 0.3); border-color: var(--go); }
+.sw.line { height: 3px; width: 14px; border: 0; background: var(--stop); vertical-align: 3px; }
+.toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text); }
+.toggle input { accent-color: var(--stop); margin: 0; }
 
 .panel-col { padding: 0 20px 24px; }
 .block { padding: 18px 0; border-bottom: 1px solid var(--line); }

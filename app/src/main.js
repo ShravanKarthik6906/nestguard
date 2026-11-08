@@ -4,8 +4,8 @@ import '@fontsource/b612-mono/400.css'
 import '@fontsource/b612-mono/700.css'
 import './style.css'
 import { RPI, USE_MOCK } from './config.js'
-import { getZones, check, explain } from './api.js'
-import { createMap, drawZones, setPin } from './map.js'
+import { getZones, check, explain, getPowerlines } from './api.js'
+import { createMap, drawZones, setPin, drawPowerlines, showPowerlines } from './map.js'
 import { showLoading, showCheck, showCheckError, showWhy } from './check.js'
 import { startDemo, stopDemo, DEMO_DATE } from './demo.js'
 import { announce } from './speech.js'
@@ -42,6 +42,35 @@ async function loadZones() {
 }
 const loadZonesSoon = () => { clearTimeout(timer); timer = setTimeout(loadZones, 300) }
 map.on('moveend', loadZonesSoon)
+
+// ---- power lines (refetch only when the map moved a lot; hidden when zoomed far out)
+const POWER_MIN_ZOOM = 12
+let powerAt = null, powerTimer
+async function loadPowerlines() {
+  const c = map.getCenter(), z = map.getZoom()
+  if (z < POWER_MIN_ZOOM) { drawPowerlines([]); powerAt = null; $('power-note').textContent = 'Zoom in to see power lines'; return }
+  const radiusKm = Math.min(3, Math.max(1, Math.round(c.distanceTo(map.getBounds().getNorthEast()) / 1000)))
+  if (powerAt && powerAt.r === radiusKm && c.distanceTo(powerAt.c) < radiusKm * 1000 * 0.4) return
+  powerAt = { c, r: radiusKm }
+  try {
+    const { data } = await getPowerlines(c.lat, c.lng, radiusKm)
+    drawPowerlines(Array.isArray(data) ? data : [])
+    $('power-note').textContent = ''
+  } catch {
+    powerAt = null
+    $('power-note').textContent = 'Power lines unavailable'
+  }
+}
+map.on('moveend', () => { clearTimeout(powerTimer); powerTimer = setTimeout(loadPowerlines, 500) })
+
+let powerOn = true
+try { powerOn = localStorage.getItem('ng:power') !== 'off' } catch {}
+$('power-toggle').checked = powerOn
+showPowerlines(powerOn)
+$('power-toggle').addEventListener('change', (e) => {
+  showPowerlines(e.target.checked)
+  try { localStorage.setItem('ng:power', e.target.checked ? 'on' : 'off') } catch {}
+})
 
 // ---- check
 let spot = null
@@ -145,5 +174,6 @@ async function stopWalk() {
 $('demo-stop').addEventListener('click', stopWalk)
 
 loadZones()
+loadPowerlines()
 startTelemetry()
 if (USE_MOCK) document.title = 'NestGuard (mock)'

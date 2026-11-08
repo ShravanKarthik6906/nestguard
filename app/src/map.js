@@ -3,7 +3,7 @@ import 'leaflet/dist/leaflet.css'
 
 export const COLORS = { green: '#2f9e5b', yellow: '#d99a1e', red: '#d64545' }
 
-let map, zoneLayer, pin
+let map, zoneLayer, powerLayer, pin
 
 export function createMap(el, center) {
   map = L.map(el).setView([center.lat, center.lon], 14)
@@ -13,6 +13,7 @@ export function createMap(el, center) {
     attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
   }).addTo(map)
   zoneLayer = L.layerGroup().addTo(map)
+  powerLayer = L.layerGroup().addTo(map)
   return map
 }
 
@@ -33,4 +34,18 @@ export function drawZones(zones) {
 export function setPin(lat, lon) {
   if (!pin) pin = L.circleMarker([lat, lon], { radius: 8, color: '#0e1013', weight: 3, fillColor: '#e8ebef', fillOpacity: 1 }).addTo(map)
   else pin.setLatLng([lat, lon])
+}
+
+export function drawPowerlines(lines) {
+  powerLayer.clearLayers()
+  for (const l of lines) {
+    if (Array.isArray(l.coords) && l.coords.length > 1) {
+      L.polyline(l.coords, { color: COLORS.red, weight: 2.5, opacity: 0.95, interactive: false }).addTo(powerLayer)
+    }
+  }
+}
+
+export function showPowerlines(on) {
+  if (on) powerLayer.addTo(map)
+  else powerLayer.remove()
 }
