@@ -21,6 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import explain
 import hazards as hz
+import live_zones
 import scoring
 import tiger
 import weather
@@ -90,10 +91,15 @@ def get_zones(lat, lon, radius_km):
                      "loc": {"$nearSphere": {
                 "$geometry": {"type": "Point", "coordinates": [lon, lat]},   # [lon, lat]!
                 "$maxDistance": radius_km * 1000}}}
-            return list(ZONES.find(query, PUBLIC_FIELDS).limit(200))
+            found = list(ZONES.find(query, PUBLIC_FIELDS).limit(200))
+            if found:
+                return found
+            # nothing seeded here: fetch live eBird + iNaturalist once (cached ~24 h)
+            return live_zones.zones_near(lat, lon, radius_km, ZONES)
         except Exception as e:
             print("zone query failed, using mock:", e)
-    return [z for z in MOCK_ZONES if dist_m(lat, lon, z["lat"], z["lon"]) <= radius_km * 1000]
+    mock = [z for z in MOCK_ZONES if dist_m(lat, lon, z["lat"], z["lon"]) <= radius_km * 1000]
+    return mock or live_zones.zones_near(lat, lon, radius_km)
 
 
 def mock_score(lat, lon, zones):
@@ -212,6 +218,8 @@ HAZARD_MESSAGE = {
 
 def score_spot(lat, lon, date, explain_it=False):
     zones = get_zones(lat, lon, 5)
+    # no zones AND no complete bird data for this area -> birds are "unknown", not green
+    birds_unknown = not zones and not live_zones.has_data(lat, lon)
     w = weather.conditions(lat, lon, date)
     eggs = scoring.nesting_nearby(lat, lon, date, zones) if is_real(zones) else True
     mult, w_reasons, w_min, checks = weather.assess(w, egg_season=eggs)                  # U5/U6
@@ -249,8 +257,15 @@ def score_spot(lat, lon, date, explain_it=False):
                 "level": ("red" if raptor and "nesting season" in raptor else "yellow") if raptor else "green",
                 "detail": "Hawk or eagle sightings within 1 km" if raptor else "No hawks or eagles seen nearby"}]
     hazards += other + weather.hazards(w)
+    if birds_unknown:
+        for h in hazards:
+            if h["type"] in ("nesting", "raptors", "migration"):
+                h["level"], h["detail"] = "unknown", "No bird data here"
+        checks["wildlife"] = "unknown"
+        out["reasons"] = ["No bird data for this area"] + out["reasons"]
     known = [h for h in hazards if h["level"] in RANK]
-    worst = max(known, key=lambda h: RANK[h["level"]])
+    worst = max(known, key=lambda h: RANK[h["level"]],
+                default={"type": "none", "level": "yellow"})   # every source down: be careful
     level = worst["level"]
 
     # ---- score: bird risk + points for every other hazard, kept consistent with the level
@@ -269,7 +284,11 @@ def score_spot(lat, lon, date, explain_it=False):
             out["message"] = "Don't fly: below FAA weather minimums"
         else:
             out["message"] = "Wait: too windy or wet to fly safely"
-    out["level"], out["score"], out["bird_score"] = level, score, bird_score
+    if birds_unknown and level == "green":
+        out["message"] = "Clear to fly, but no bird data here: watch for birds"
+    elif not known:
+        out["message"] = "Wait: no data for this area right now"
+    out["level"], out["score"], out["bird_score"] = level, score, (None if birds_unknown else bird_score)
     out["hazards"] = hazards
     out["checks"] = checks                        # {"wildlife", "safety", "legal"} (kept for the UI)
     try:
