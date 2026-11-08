@@ -53,24 +53,26 @@
           <button id="go" class="btn primary big" type="button" disabled>Check my location</button>
           <p id="setup-msg" class="msg" role="status"></p>
 
-          <details class="adv">
-            <summary>Advanced options</summary>
-            <div class="adv-body">
-              <p class="adv-h">Sample places</p>
-              <div class="chips">
-                <button data-preset="rpi-today">RPI campus, today</button>
-                <button data-preset="rpi-may">RPI campus, May 2027</button>
-                <button data-preset="power">Next to a power line, Troy</button>
-                <button data-preset="bolsa">Bolsa Chica, May 13 2021</button>
-              </div>
-              <p class="adv-h">Guided demo</p>
-              <p class="adv-t">Walk through NestGuard step by step along a pretend route in Troy, with today's live data. The controller device follows along.</p>
-              <button id="demo-open" class="btn" type="button">Start the guided demo</button>
-              <p class="adv-h">Offline and backup</p>
-              <p class="adv-t">Check your connection, saved results and the built-in sample data.</p>
-              <button class="btn" type="button" data-go="offline">Open offline and backup</button>
+          <section class="more" aria-labelledby="more-h">
+            <h2 id="more-h" class="more-h">Or try it without picking a place</h2>
+            <p class="adv-h">Example places</p>
+            <div class="chips">
+              <button data-preset="rpi-today">RPI campus, today</button>
+              <button data-preset="rpi-may">RPI campus, May 2027</button>
+              <button data-preset="power">Next to a power line, Troy</button>
+              <button data-preset="bolsa">Bolsa Chica, May 13 2021</button>
             </div>
-          </details>
+            <div class="more-grid">
+              <button id="demo-open" class="more-card" type="button">
+                <span class="more-t">Guided demo</span>
+                <span class="more-d">Walk through NestGuard step by step on a route in Troy, with today's live data. The controller device follows along.</span>
+              </button>
+              <button class="more-card" type="button" data-go="offline">
+                <span class="more-t">Offline and backup</span>
+                <span class="more-d">See your connection, saved results and the built-in sample data that works without internet.</span>
+              </button>
+            </div>
+          </section>
         </div>
       </section>
 
