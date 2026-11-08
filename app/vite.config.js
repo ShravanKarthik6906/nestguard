@@ -8,7 +8,7 @@ const paths = ['/zones', '/check', '/powerlines', '/device', '/speak', '/docs', 
 
 export default defineConfig({
   build: {
-    rollupOptions: { input: { main: 'index.html', privacy: 'privacy.html', terms: 'terms.html' } },
+    rollupOptions: { input: { main: 'index.html', preflight: 'preflight.html', privacy: 'privacy.html', terms: 'terms.html' } },
   },
   server: {
     proxy: Object.fromEntries(paths.map((p) => [p, { target, changeOrigin: true }])),
