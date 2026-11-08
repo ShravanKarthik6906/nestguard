@@ -365,7 +365,11 @@ def zones(lat: float, lon: float, radius_km: float = 5,
 @app.get("/check")
 def check(lat: float, lon: float, date: datetime.date = Query(default_factory=datetime.date.today),
           explain: bool = False):
-    """explain=true adds a Gemini "why" sentence (the app uses it; the device doesn't)."""
+    """explain=true adds a Gemini "why" sentence (the app uses it; the device doesn't).
+    An app check (explain=true) also becomes the device's location, so the device shows the
+    spot the user just checked. The device's own checks never set explain, so no loop."""
+    if explain:
+        device["demo"] = {"lat": lat, "lon": lon, "date": date.isoformat(), "from": "app"}
     return score_spot(lat, lon, date, explain_it=explain)
 
 
