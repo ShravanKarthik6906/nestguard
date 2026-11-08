@@ -18,12 +18,15 @@ async function getJSON(path, timeoutMs = TIMEOUT_MS) {
     const res = await fetch(path, { signal: AbortSignal.timeout(timeoutMs) })
     if (!res.ok) throw new Error('HTTP ' + res.status)
     const data = await res.json()
-    try { localStorage.setItem(key, JSON.stringify(data)) } catch {}
-    return { data, source: 'live' }
+    const now = Date.now()
+    try { localStorage.setItem(key, JSON.stringify(data)); localStorage.setItem('ng:t:' + path, String(now)) } catch {}
+    return { data, source: 'live', savedAt: now }
   } catch (err) {
     let saved = null
     try { saved = localStorage.getItem(key) } catch {}
-    if (saved) return { data: JSON.parse(saved), source: 'cached' }
+    let savedAt = null
+    try { savedAt = Number(localStorage.getItem('ng:t:' + path)) || null } catch {}
+    if (saved) return { data: JSON.parse(saved), source: 'cached', savedAt }
     throw err
   }
 }
