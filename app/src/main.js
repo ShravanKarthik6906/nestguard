@@ -5,7 +5,8 @@ import '@fontsource/b612-mono/700.css'
 import './style.css'
 import { RPI, USE_MOCK } from './config.js'
 import { getZones, check, explain, getPowerlines } from './api.js'
-import { createMap, drawZones, setPin, drawPowerlines, showPowerlines } from './map.js'
+import { createMap, drawZones, setPin, setPinRisk, drawPowerlines, showPowerlines } from './map.js'
+import { band } from './risk.js'
 import { showLoading, showCheck, showCheckError, showWhy } from './check.js'
 import { startDemo, stopDemo, demoDate, START, END } from './demo.js'
 import { announce } from './speech.js'
@@ -85,6 +86,7 @@ async function runCheck({ speak = true, why = speak } = {}) {
     const { data, source } = await check(spot.lat, spot.lon, $('date').value)
     if (id !== checkId) return
     showCheck(data)
+    setPinRisk(band(data.score).cls)
     announce(data, { force: speak })
     if (source !== 'live') setStatus(source === 'mock' ? 'Offline mock data' : 'Cached result (network is slow)', source)
     if (speak && narrow.matches) $('banner').scrollIntoView({ behavior: 'smooth', block: 'start' })
