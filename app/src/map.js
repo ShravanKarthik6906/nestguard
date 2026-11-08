@@ -17,6 +17,7 @@ const osmLayer = () => retryTiles(L.tileLayer('https://tile.openstreetmap.org/{z
 
 // Slow or busy networks drop some tiles: retry each failed one up to 3 times (after 0.8, 1.6, 2.4 s)
 // instead of leaving a black square. Leaflet's load handler stays attached, so a retry that succeeds
+// counts as a normal load.
 function retryTiles(layer) {
   layer.on('tileerror', (e) => {
     const img = e.tile, n = Number(img.dataset.retry || 0)
