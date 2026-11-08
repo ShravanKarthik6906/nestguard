@@ -22,6 +22,8 @@ export function showCheck(r) {
   $('banner').textContent = LABELS[level]
   $('message').textContent = cleanMessage(r.message)
   $('score').textContent = r.score ?? 'Not available'
+  $('bird-row').hidden = typeof r.bird_score !== 'number'
+  $('bird-score').textContent = r.bird_score ?? ''
   $('best-time').textContent = r.best_time || 'Not available'
 
   $('checks').replaceChildren(...items(r.checks ? CHECKS : [], (li, [key, name]) => {
@@ -50,6 +52,7 @@ export function showCheckError(msg) {
   $('banner').textContent = 'No result'
   $('message').textContent = msg
   $('score').textContent = 'Not available'
+  $('bird-row').hidden = true
   $('best-time').textContent = 'Not available'
   $('checks').replaceChildren()
   $('raptor').hidden = true
