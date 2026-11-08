@@ -7,7 +7,7 @@ import { RPI, USE_MOCK } from './config.js'
 import { getZones, check, explain, getPowerlines } from './api.js'
 import { createMap, drawZones, setPin, drawPowerlines, showPowerlines } from './map.js'
 import { showLoading, showCheck, showCheckError, showWhy } from './check.js'
-import { startDemo, stopDemo, DEMO_DATE } from './demo.js'
+import { startDemo, stopDemo, demoDate, START, END } from './demo.js'
 import { announce } from './speech.js'
 import { startTelemetry } from './telemetry.js'
 
@@ -146,11 +146,11 @@ document.querySelectorAll('[data-preset]').forEach((btn) => {
 })
 
 // ---- demo walk (indoors, no GPS): the app moves, the device follows via /device/demo
-$('demo-start').addEventListener('click', () => {
-  $('date').value = DEMO_DATE
+function startWalk() {
+  $('date').value = demoDate()
   $('demo-start').hidden = true
   $('demo-stop').hidden = false
-  map.setView([33.715, -118.025], 14)
+  map.fitBounds([[START.lat, START.lon], [END.lat, END.lon]], { padding: [40, 40] })
   startDemo(
     (p, i, n) => {
       $('demo-info').textContent = `Point ${i + 1} of ${n}`
@@ -158,7 +158,8 @@ $('demo-start').addEventListener('click', () => {
     },
     (msg) => setStatus(msg, 'error'),
   )
-})
+}
+$('demo-start').addEventListener('click', startWalk)
 
 async function stopWalk() {
   $('demo-stop').hidden = true
@@ -177,6 +178,8 @@ $('demo-stop').addEventListener('click', stopWalk)
 // Deep link from the landing page or the demo script: /preflight.html?scenario=bolsa (rpi-today, rpi-may, bolsa, power)
 const scenario = new URLSearchParams(location.search).get('scenario')
 if (scenario && PRESETS[scenario]) document.querySelector(`[data-preset="${scenario}"]`).click()
+// /preflight.html?demo=walk starts the live demo walk straight away (sound starts after the first tap on iPhone)
+if (new URLSearchParams(location.search).get('demo') === 'walk') startWalk()
 
 loadZones()
 loadPowerlines()

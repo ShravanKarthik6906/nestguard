@@ -1,9 +1,13 @@
 import { setDemo } from './api.js'
 
-// Fake walk at Bolsa Chica on the day of the 2021 drone crash.
-export const DEMO_DATE = '2021-05-13'
-const START = { lat: 33.725, lon: -118.005 }
-const END = { lat: 33.705, lon: -118.045 }
+// Live demo walk in Troy, today: from RPI campus to a spot about 40 m from a power line.
+// Every point is a real check with today's weather, birds and power lines.
+export const demoDate = () => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+export const START = { lat: 42.7302, lon: -73.6788 } // RPI campus
+export const END = { lat: 42.7493, lon: -73.694138 } // next to a power line (pre-loaded OpenStreetMap data)
 const STEPS = 10
 const EVERY_MS = 2000
 
@@ -26,7 +30,7 @@ export function startDemo(onPoint, onDeviceError) {
   const step = async () => {
     const p = PATH[i]
     onPoint(p, i, PATH.length)
-    try { await setDemo({ lat: p.lat, lon: p.lon, date: DEMO_DATE }) }
+    try { await setDemo({ lat: p.lat, lon: p.lon, date: demoDate() }) }
     catch (err) { onDeviceError('Device not updated: ' + err.message) }
     i++
     if (i >= PATH.length) stopTimer() // stay on the last (red) point until Stop

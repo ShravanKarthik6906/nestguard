@@ -27,7 +27,8 @@ PHRASES = ["Go. Clear to fly.", "Wait. Check the warnings before you fly.", "Don
 
 PRESETS = [(42.7302, -73.6788, None), (42.7302, -73.6788, "2027-05-15"), (33.70, -118.04, "2021-05-13"),
            (42.7493, -73.694138, None)]
-WALK = [(round(33.725 + (33.705 - 33.725) * i / 9, 5), round(-118.005 + (-118.045 + 118.005) * i / 9, 5), "2021-05-13")
+# live demo walk: RPI campus to the power-line spot, today (same path as app/src/demo.js)
+WALK = [(round(42.7302 + (42.7493 - 42.7302) * i / 9, 5), round(-73.6788 + (-73.694138 + 73.6788) * i / 9, 5), None)
         for i in range(10)]
 
 
