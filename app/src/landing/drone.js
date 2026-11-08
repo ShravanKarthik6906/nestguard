@@ -17,7 +17,8 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping
 renderer.toneMappingExposure = 1.1
 renderer.shadowMap.enabled = true
 renderer.shadowMap.type = THREE.PCFSoftShadowMap
-document.body.prepend(renderer.domElement)
+const hero = document.getElementById('hero')
+hero.prepend(renderer.domElement)
 
 const scene = new THREE.Scene()
 scene.background = new THREE.Color(0x0e1013)
@@ -318,11 +319,10 @@ function renderAt(t) {
   for (const p of props) p.userData.spinner.rotation.y = p.userData.dir * (after * after * 18 + after * 32 * spin)
   M.blur.opacity = spin * 0.05
   M.ledG.emissiveIntensity = M.ledR.emissiveIntensity = after > 0.1 ? 2.2 : 0
-  // the body floats the whole time it is being built: bob, slow turn, sway
+  // while it is being built: hover in place, nudged by each part that locks in
   const lift = easeOutCubic(THREE.MathUtils.clamp((after - 0.5) / 1.3, 0, 1))
   const build = easeOutCubic(Math.min(1, t / ASSEMBLED))
   let dipY = 0, kickX = 0, kickZ = 0
-  // each part that locks in gives the body a small damped nudge toward its side
   for (const part of parts) {
     const x = t - (part.obj.userData.t0 + DUR)
     if (x < 0 || x > 0.8) continue
@@ -332,27 +332,43 @@ function renderAt(t) {
     kickX += 0.07 * wobble * Math.sign(e.z || 0)
     kickZ -= 0.07 * wobble * Math.sign(e.x || 0)
   }
-  // figure-eight drift + strong bob, banking into the direction it drifts
-  const dx = 0.32 * Math.sin(t * 0.8), dz = 0.18 * Math.sin(t * 1.6)
-  drone.position.y = 0.4 * lift + 0.2 * Math.sin(t * 1.4) + 0.08 * Math.sin(t * 2.5 + 1) + dipY
-  drone.position.x = dx
-  drone.position.z = dz
-  drone.rotation.y = -0.95 * (1 - build) + 0.3 * Math.sin(t * 0.5)
-  drone.rotation.z = -0.16 * Math.cos(t * 0.8) + 0.04 * Math.sin(t * 2.1) + kickZ + pointer.x * 0.08
-  drone.rotation.x = -0.06 + 0.03 * Math.cos(t * 1.6) + 0.012 * Math.sin(t * 2.3 + 0.6) + kickX * 0.4 - pointer.y * 0.03
+  const hoverX = 0.32 * Math.sin(t * 0.8), hoverZ = 0.18 * Math.sin(t * 1.6)
+  const hoverY = 0.4 * lift + 0.2 * Math.sin(t * 1.4) + 0.08 * Math.sin(t * 2.5 + 1) + dipY
+  const hoverYaw = -0.95 * (1 - build) + 0.3 * Math.sin(t * 0.5)
+  const hoverRoll = -0.16 * Math.cos(t * 0.8) + 0.04 * Math.sin(t * 2.1) + kickZ
+  const hoverPitch = -0.06 + 0.03 * Math.cos(t * 1.6) + kickX * 0.4
+
+  // after take-off: fly a wide loop around the screen, facing where it goes and banking into turns
+  const fly = easeInOutCubic(THREE.MathUtils.clamp((after - 2.2) / 2.5, 0, 1))
+  const ft = Math.max(0, after - 2.2)
+  const wide = camera.aspect < 0.8 ? 0.8 : 1.9
+  const path = (u) => new THREE.Vector3(wide * Math.sin(u * 0.34), -0.4 + 0.12 * Math.sin(u * 0.52), -0.9 + 0.5 * Math.sin(u * 0.68))
+  const p0 = path(ft), p1 = path(ft + 0.08), p2 = path(ft + 0.16)
+  const v1 = p1.clone().sub(p0), v2 = p2.clone().sub(p1)
+  const heading = Math.atan2(v1.x, v1.z)
+  const turn = Math.atan2(v2.x, v2.z) - heading
+  const speed = v1.length() / 0.08
+  const bank = THREE.MathUtils.clamp(-Math.atan2(Math.sin(turn), Math.cos(turn)) * 6, -0.45, 0.45)
+  const lerp = THREE.MathUtils.lerp
+  // shortest way round from the hover yaw to the flight heading
+  let dYaw = heading - hoverYaw; dYaw = Math.atan2(Math.sin(dYaw), Math.cos(dYaw))
+  drone.position.set(lerp(hoverX, p0.x, fly), lerp(hoverY, p0.y + 0.06 * Math.sin(t * 2.3), fly), lerp(hoverZ, p0.z, fly))
+  drone.rotation.y = hoverYaw + dYaw * fly
+  drone.rotation.z = lerp(hoverRoll, bank, fly) + pointer.x * 0.06
+  drone.rotation.x = lerp(hoverPitch, 0.05 + speed * 0.05, fly) - pointer.y * 0.03
   if (after > 0.25 && !readyShown) {
     readyShown = true
-    document.getElementById('status').innerHTML = 'PRE-FLIGHT / <b>SYSTEMS GO</b>'
     document.body.classList.add('ready')
   }
   composer.render()
 }
 
-addEventListener('pointermove', (e) => { pointer.x = e.clientX / innerWidth - 0.5; pointer.y = e.clientY / innerHeight - 0.5 })
+hero.addEventListener('pointermove', (e) => { pointer.x = e.clientX / innerWidth - 0.5; pointer.y = e.clientY / innerHeight - 0.5 })
 function resize() {
-  renderer.setSize(innerWidth, innerHeight, false); composer.setSize(innerWidth, innerHeight)
-  for (const m of trailMats) m.resolution.set(innerWidth, innerHeight)
-  camera.aspect = innerWidth / innerHeight
+  const w = hero.clientWidth, h = hero.clientHeight
+  renderer.setSize(w, h, false); composer.setSize(w, h)
+  for (const m of trailMats) m.resolution.set(w, h)
+  camera.aspect = w / h
   const portrait = camera.aspect < 0.8 // phones: wider lens, drone framed in the top half above the text
   camera.fov = portrait ? 58 : 30
   camera.position.set(0, 3.3, portrait ? 9.2 : 8.4)
@@ -370,7 +386,10 @@ else {
     const now = (performance.now() - start) / 1000
     if (now < ASSEMBLED) start = performance.now() - ASSEMBLED * 1000
   }
-  addEventListener('pointerdown', skip)
+  hero.addEventListener('pointerdown', skip)
   addEventListener('keydown', skip)
-  renderer.setAnimationLoop(() => renderAt((performance.now() - start) / 1000))
+  const loop = () => renderAt((performance.now() - start) / 1000)
+  renderer.setAnimationLoop(loop)
+  // stop drawing while the hero is scrolled out of view (saves battery)
+  new IntersectionObserver(([e]) => renderer.setAnimationLoop(e.isIntersecting ? loop : null)).observe(hero)
 }

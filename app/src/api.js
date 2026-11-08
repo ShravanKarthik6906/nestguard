@@ -118,3 +118,12 @@ export async function getPowerlines(lat, lon, radiusKm) {
   // loads in the background, and a new area can take a while on the server (OpenStreetMap lookup)
   return getJSON(`/powerlines?lat=${r4(lat)}&lon=${r4(lon)}&radius_km=${radiusKm}`, 15000)
 }
+
+// Checks per hour and level over the last 24 h (Tiger Data). Never cached.
+export async function getStats() {
+  if (USE_MOCK) return [{ hour: 'mock', level: 'green', checks: 9 }, { hour: 'mock', level: 'red', checks: 3 }]
+  const res = await fetch('/stats/checks?hours=24', { cache: 'no-store', signal: AbortSignal.timeout(TIMEOUT_MS) })
+  if (!res.ok) throw new Error('HTTP ' + res.status)
+  const rows = await res.json()
+  return Array.isArray(rows) ? rows : []
+}

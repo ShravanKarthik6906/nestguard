@@ -9,20 +9,118 @@
   </head>
   <body class="landing">
     <nav class="lnav">
-      <span class="wordmark">NestGuard</span>
+      <a class="wordmark" href="/">NestGuard</a>
+      <a href="#how">How it works</a>
+      <a href="#live">Live</a>
+      <a href="/preflight.html">Pre-flight check</a>
+    </nav>
+
+    <header class="hero" id="hero">
+      <div class="copy">
+        <h1>Will your drone make it back?</h1>
+        <p>Wind, hawks, migrating birds and power lines, in one answer.</p>
+        <div class="btns">
+          <a class="btn solid" href="/preflight.html">Start pre-flight check</a>
+          <a class="btn" href="/preflight.html?scenario=bolsa">Replay Bolsa Chica 2021</a>
+        </div>
+        <div class="hint" id="skip">Tap anywhere to skip</div>
+        <a class="hint scroll" href="#problem">Scroll to see how it works</a>
+      </div>
+    </header>
+
+    <main class="info">
+      <section id="problem">
+        <span class="label">The problem</span>
+        <h2>The biggest risks are invisible from the ground.</h2>
+        <p>A pilot standing in a field sees blue sky. They cannot see the gusts at 120 feet, the cloud base dropping below the FAA limit, the red-tailed hawk that defends this tree line, the migrating flock passing overhead, or the power line hidden against the trees. Each of those can bring a drone down, and a falling drone can hurt people and wildlife.</p>
+        <div class="story">
+          <span class="big">1,500</span>
+          <div>
+            <p class="lead">eggs abandoned at Bolsa Chica, California, on May 13, 2021.</p>
+            <p>A drone crashed into a nesting colony of terns and the birds left their nests. A single check before that flight would have said Don't fly.</p>
+            <a class="link" href="/preflight.html?scenario=bolsa">Replay that check</a>
+          </div>
+        </div>
+      </section>
+
+      <section id="how">
+        <span class="label">How it works</span>
+        <h2>Ten hazards, checked together, one answer.</h2>
+        <ol class="steps">
+          <li><span><b>Pick a spot and a time.</b> Tap the map, use your location, or let the controller device send its GPS position.</span></li>
+          <li><span><b>NestGuard checks every hazard at once.</b> Weather at drone height, FAA weather minimums, birds, power lines and people below, from the sources in the table.</span></li>
+          <li><span><b>You get Go, Wait or Don't fly.</b> With the reason, the best time to fly instead, and a spoken alert so your eyes stay on the drone.</span></li>
+        </ol>
+        <table class="hazards-table">
+          <thead><tr><th>Hazard</th><th>What we check</th><th>Source</th></tr></thead>
+          <tbody>
+            <tr><td>Wind and rain</td><td>Wind and gusts at drone height, rain</td><td>Open-Meteo</td></tr>
+            <tr><td>Cloud base and visibility</td><td>FAA Part 107: 3 statute miles of visibility, 500 ft below clouds</td><td>Open-Meteo</td></tr>
+            <tr><td>Raptors</td><td>Recent hawk and eagle sightings, which attack drones</td><td>eBird, iNaturalist</td></tr>
+            <tr><td>Nesting</td><td>Nesting season and colonies nearby</td><td>eBird, iNaturalist</td></tr>
+            <tr><td>Migration</td><td>Spring and fall migration activity</td><td>eBird</td></tr>
+            <tr><td>Power lines</td><td>Distance to the nearest line</td><td>OpenStreetMap</td></tr>
+            <tr><td>People below</td><td>How built up the area is</td><td>OpenStreetMap</td></tr>
+            <tr><td>Air quality</td><td>Smoke and haze that cut visibility</td><td>Open-Meteo</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="live">
+        <span class="label">Live right now</span>
+        <h2>Today at RPI, Troy, New York</h2>
+        <p class="muted">This is the real pre-flight check, run as you load this page.</p>
+        <div class="live">
+          <div id="live-verdict" class="verdict skeleton"></div>
+          <p id="live-message" class="live-message"></p>
+          <ul id="live-hazards" class="hazards"></ul>
+          <p id="live-stats" class="muted mono"></p>
+          <a class="btn solid" href="/preflight.html">Open the pre-flight check</a>
+        </div>
+      </section>
+
+      <section id="device">
+        <span class="label">The device</span>
+        <h2>A small box clipped to the controller.</h2>
+        <p>It reads the same answer every five seconds, lights up green, yellow or red, and flashes its screen when the pilot gets close to a risky zone. It also reports temperature and light, so the app can show that the device is online. For indoor demos the app walks a pretend path, and the device follows it.</p>
+      </section>
+
+      <section id="privacy">
+        <span class="label">Privacy</span>
+        <h2>We never show where birds nest.</h2>
+        <p>Exact nest and sighting locations stay on our server. The map only shows zones blurred to a grid of about 1 km, so nobody can use NestGuard to find nests. We keep no accounts and never store your exact position. <a class="link" href="/privacy.html">Read the privacy page</a></p>
+      </section>
+
+      <section id="built">
+        <span class="label">Built with</span>
+        <dl class="built">
+          <div><dt>MongoDB Atlas</dt><dd>Blurred bird zones with geospatial "near me" search</dd></div>
+          <div><dt>Tiger Data</dt><dd>Sighting trends, device history and check statistics</dd></div>
+          <div><dt>Google Gemini</dt><dd>One plain sentence explaining each answer</dd></div>
+          <div><dt>Fish Audio</dt><dd>The spoken alerts</dd></div>
+          <div><dt>Vultr</dt><dd>One server for the app and the API, over https</dd></div>
+          <div><dt>Open data</dt><dd>eBird, iNaturalist, Open-Meteo, OpenStreetMap</dd></div>
+        </dl>
+      </section>
+
+      <section id="team">
+        <span class="label">Team</span>
+        <dl class="built">
+          <div><dt>Udaya</dt><dd>Back end, data and the risk score</dd></div>
+          <div><dt>Ryan</dt><dd>The controller device</dd></div>
+          <div><dt>Shravan</dt><dd>The app, spoken alerts and hosting</dd></div>
+          <div><dt>Dhruv</dt><dd>Device mount, demo and Devpost</dd></div>
+        </dl>
+      </section>
+    </main>
+
+    <footer class="lfoot">
       <a href="/preflight.html">Pre-flight check</a>
       <a href="/privacy.html">Privacy</a>
-    </nav>
-    <div class="copy">
-      <div class="status" id="status">PRE-FLIGHT / ASSEMBLING</div>
-      <h1>Will your drone make it back?</h1>
-      <p>Wind, hawks, migrating birds and power lines, in one answer.</p>
-      <div class="btns">
-        <a class="btn solid" href="/preflight.html">Start pre-flight check</a>
-        <a class="btn" href="/preflight.html?scenario=bolsa">Replay Bolsa Chica 2021</a>
-      </div>
-      <div class="skip" id="skip">Tap anywhere to skip</div>
-    </div>
+      <a href="/terms.html">Terms</a>
+      <span>NestGuard, HackRPI 2026</span>
+    </footer>
+
     <script type="module" src="/src/landing/landing.js"></script>
   </body>
 </html>
