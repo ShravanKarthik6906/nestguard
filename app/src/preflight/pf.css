@@ -396,3 +396,4 @@ body.pf > .map { display: none; }
 /* guided tour: the side panel shows the stop's score, what the stop is about, and the controls */
 .pf.demo-mode #exp-safer, .pf.demo-mode .layers, .pf.demo-mode .legend { display: none; }
 .pf.demo-mode .side > #exp-score { grid-column: 1 / -1; }
+.pf.tour-intro .side > #exp-score { display: none; }   /* no score yet during the intro */

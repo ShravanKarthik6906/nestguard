@@ -31,7 +31,7 @@ export const PATH_POINTS = () => PATH
 let timer = null
 let index = 0
 let cb = { onPoint: () => {}, onDeviceError: () => {}, onEnd: () => {} }
-export const isRunning = () => timer !== null
+export const isRunning = () => timer !== null || endTimer !== null
 export const currentIndex = () => index
 
 // Show one point: move the marker, run the check (onPoint) and tell the device (POST /device/demo).
@@ -52,25 +52,30 @@ export function startDemo(onPoint, onDeviceError, onEnd) {
   resumeDemo()
 }
 
-// Step automatically every EVERY_MS; stays on the last point (device keeps its state) until Stop.
+// Step automatically every EVERY_MS. The last stop also stays up for its full time before onEnd
+// (the end summary), so it never appears instantly.
 export function resumeDemo() {
   stopTimer()
-  if (index >= PATH.length - 1) return
+  if (index >= PATH.length - 1) { cb.onEnd(); return }
   timer = setInterval(async () => {
     await show(index + 1)
-    if (index >= PATH.length - 1) { stopTimer(); cb.onEnd() }
+    if (index >= PATH.length - 1) { clearInterval(timer); timer = null; endTimer = setTimeout(() => { endTimer = null; cb.onEnd() }, EVERY_MS) }
   }, EVERY_MS)
 }
 export const pauseDemo = () => stopTimer()
 export async function stepDemo(delta) {
   stopTimer()
   await show(index + delta)
-  if (index >= PATH.length - 1) cb.onEnd()
+  if (index >= PATH.length - 1) endTimer = setTimeout(() => { endTimer = null; cb.onEnd() }, END_AFTER_STEP_MS)
 }
 
+let endTimer = null
+const END_AFTER_STEP_MS = 2500
 function stopTimer() {
   clearInterval(timer)
   timer = null
+  clearTimeout(endTimer)
+  endTimer = null
 }
 
 export async function stopDemo() {

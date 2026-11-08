@@ -467,18 +467,37 @@ $('demo-dots').innerHTML = pts.map(() => '<i></i>').join('')
 let demoFirst = null
 let tourScores = []
 let lastDemoCheck = Promise.resolve()
+let introTimer = null
+const INTRO_S = 3
 function startWalk() {
   scenarioKey = null
   $('date').value = today()
   state.demo = true; demoFirst = null; tourScores = []
-  document.body.classList.add('demo-mode'); showPin(false); setSaferSpot(null)
+  document.body.classList.add('demo-mode', 'tour-intro'); showPin(false); setSaferSpot(null)
   state.spot = { lat: pts[0].lat, lon: pts[0].lon, name: pts[0].name }
   unlockSteps()
   go('explore')
   $('demo-panel').hidden = false; $('demo-end').hidden = true
   $('demo-play').textContent = 'Pause'
-  drawRoute(pts, 0)
-  startDemo(onDemoPoint, (msg) => { $('demo-device').textContent = msg }, onDemoEnd)
+  ;['demo-prev', 'demo-next', 'demo-play'].forEach((id) => { $(id).disabled = true })
+  $('demo-dots').querySelectorAll('i').forEach((d) => { d.className = '' })
+  drawRoute(pts, -1)                           // all 5 places, none visited yet
+  // a short intro so viewers can take in the map before the first stop
+  let left = INTRO_S
+  const tick = () => {
+    $('demo-step').textContent = 'Starting'
+    $('demo-now').innerHTML = `<p class="tour-name">Starting the tour in ${left}</p><p class="tour-point">The 5 places are marked on the map. Each one gets a live risk score as we reach it.</p>`
+  }
+  tick()
+  clearInterval(introTimer)
+  introTimer = setInterval(() => {
+    left -= 1
+    if (left > 0) return tick()
+    clearInterval(introTimer); introTimer = null
+    document.body.classList.remove('tour-intro')
+    ;['demo-prev', 'demo-next', 'demo-play'].forEach((id) => { $(id).disabled = false })
+    startDemo(onDemoPoint, (msg) => { $('demo-device').textContent = msg }, onDemoEnd)
+  }, 1000)
 }
 function onDemoPoint(p, i, n) {
   state.spot = { lat: p.lat, lon: p.lon, name: p.name }
@@ -512,8 +531,9 @@ async function onDemoEnd() {
 }
 async function endWalk() {
   pauseDemo()
+  clearInterval(introTimer); introTimer = null
   state.demo = false
-  document.body.classList.remove('demo-mode'); showPin(true)
+  document.body.classList.remove('demo-mode', 'tour-intro'); showPin(true)
   $('demo-panel').hidden = true
   if (state.result) renderSpotSummary()   // brings back buttons hidden during the demo
   clearRoute()
@@ -526,7 +546,16 @@ $('demo-play').addEventListener('click', () => {
 })
 $('demo-prev').addEventListener('click', () => { stepDemo(-1); $('demo-play').textContent = 'Play'; $('demo-end').hidden = true })
 $('demo-next').addEventListener('click', () => { stepDemo(1); $('demo-play').textContent = 'Play' })
-$('demo-exit').addEventListener('click', async () => { await endWalk(); go('results') })
+// ending: say so for a moment (the device is reset meanwhile) instead of jumping away instantly
+$('demo-exit').addEventListener('click', async () => {
+  pauseDemo(); clearInterval(introTimer); introTimer = null
+  ;['demo-prev', 'demo-next', 'demo-play', 'demo-exit'].forEach((id) => { $(id).disabled = true })
+  $('demo-end').hidden = true
+  $('demo-now').innerHTML = '<p class="tour-name">Ending the tour</p><p class="tour-point">Resetting the controller device.</p>'
+  await Promise.all([endWalk(), new Promise((res) => setTimeout(res, 1500))])
+  $('demo-exit').disabled = false
+  go('results')
+})
 setInterval(() => { if (state.demo) $('demo-device').textContent = `Device: ${$('device-state').textContent.toLowerCase()}` }, 2000)
 
 // ---------- why a sample place was picked (shown on its assessment)
