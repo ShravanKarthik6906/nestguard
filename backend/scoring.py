@@ -99,6 +99,17 @@ def level_for(score):
     return "red" if score >= RED_AT else "yellow" if score >= YELLOW_AT else "green"
 
 
+def nesting_nearby(lat, lon, date, zones, km=2.0):
+    """True when any zone within km has a species group nesting this month."""
+    for z in zones:
+        if dist_m(lat, lon, z["lat"], z["lon"]) - z.get("radius_m", 500) > km * 1000:
+            continue
+        _, d = zone_risk(z, date)
+        if d["nesting"]:
+            return True
+    return False
+
+
 def public_zone(zone, date):
     """Zone as the app/device sees it, with a level for this date (no species lists)."""
     r, _ = zone_risk(zone, date)

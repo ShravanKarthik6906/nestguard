@@ -33,6 +33,12 @@ if tiger.enabled():                     # Tiger Data hypertables (time series); 
                      daemon=True).start()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
+try:                                    # Fish Audio spoken alerts (Shravan's backend/speak.py)
+    from speak import router as speak_router
+    app.include_router(speak_router)
+except ImportError as e:
+    print("speak.py not found, /speak disabled:", e)
+
 try:                                   # load backend/.env (MONGODB_URI, keys)
     from dotenv import load_dotenv
     load_dotenv(pathlib.Path(__file__).parent / ".env")
@@ -119,7 +125,7 @@ def hour_label(when, today):
     return day, when.strftime("%I %p").lstrip("0")
 
 
-def best_time(lat, lon, date, base_risk, nesting_until):
+def best_time(lat, lon, date, base_risk, nesting_until, floor="green"):
     """U9: today -> scan from now to the end of tomorrow and report the first daylight window
     with the best level; other dates -> that day's daylight hours."""
     local_today = weather.local_now(lat, lon)
@@ -136,7 +142,7 @@ def best_time(lat, lon, date, base_risk, nesting_until):
     for when, w, _ in hs:
         mult, _, w_min, _ = weather.assess(w)
         lvl = scoring.level_for(round(min(1.0, base_risk * mult) * 100))
-        rated.append((when, max(lvl, w_min, key=lambda l: RANK[l])))
+        rated.append((when, max(lvl, w_min, floor, key=lambda l: RANK[l])))   # floor = hazards that last all day
     best = min(RANK[l] for _, l in rated)
     # first run of consecutive hours at the best level
     run = []
@@ -207,7 +213,8 @@ HAZARD_MESSAGE = {
 def score_spot(lat, lon, date, explain_it=False):
     zones = get_zones(lat, lon, 5)
     w = weather.conditions(lat, lon, date)
-    mult, w_reasons, w_min, checks = weather.assess(w)                                   # U5/U6
+    eggs = scoring.nesting_nearby(lat, lon, date, zones) if is_real(zones) else True
+    mult, w_reasons, w_min, checks = weather.assess(w, egg_season=eggs)                  # U5/U6
     trend = tiger.trend(lat, lon, date) if tiger.enabled() else None                    # Tiger Data
     trend_reason = []
     # only claim a rise when the earlier weeks have a real baseline (eBird gives us 30 days)
@@ -248,9 +255,8 @@ def score_spot(lat, lon, date, explain_it=False):
 
     # ---- score: bird risk + points for every other hazard, kept consistent with the level
     score = bird_score + sum(POINTS.get(h["level"], 0) for h in known if h["type"] not in ("nesting",))
-    score = min(100, max(score, {"red": 60, "yellow": 30, "green": 0}[level]))
-    if level == "green":
-        score = min(score, 29)
+    lo, hi = {"red": (60, 100), "yellow": (30, 59), "green": (0, 29)}[level]
+    score = max(lo, min(hi, score))               # the number always matches the colour
 
     # ---- reasons + message
     extra = [h["detail"] for h in sorted(known, key=lambda h: -RANK[h["level"]])
@@ -277,12 +283,17 @@ def score_spot(lat, lon, date, explain_it=False):
         print("safer_spot failed:", e)
         out["safer_spot"] = None
     try:
-        out["best_time"] = best_time(lat, lon, date, out.pop("base_risk"), out.pop("nesting_until"))
+        lasting = max(["green"] + [h["level"] for h in known
+                                   if h["type"] in ("raptors", "powerlines", "crowd", "migration", "air")],
+                      key=lambda l: RANK[l])
+        out["best_time"] = best_time(lat, lon, date, out.pop("base_risk"), out.pop("nesting_until"), lasting)
     except Exception as e:
         print("best_time failed:", e)
         out["best_time"] = None
     out.pop("base_risk", None)
     out.pop("nesting_until", None)
+    if trend and trend.get("before", 0) < 10:
+        trend = dict(trend, ratio=None)           # no real baseline (eBird gives 30 days): no ratio
     out["trend"] = trend                          # Tiger Data: weekly sightings near here
     if explain_it:
         out["why"] = explain.why(out)             # U9: Gemini, only when the app asks
@@ -305,7 +316,7 @@ def powerlines(lat: float, lon: float, radius_km: float = 1):
     """Power-line polylines near a point (OpenStreetMap; demo areas pre-loaded, others cached).
     503 = data unavailable right now (not the same as "no power lines")."""
     from fastapi import HTTPException
-    lines = hz.powerlines(lat, lon, min(radius_km, 1.5))
+    lines = hz.powerlines(lat, lon, min(radius_km, 3))     # map: up to 3 km (hazard check stays 1 km)
     if lines is None:
         raise HTTPException(status_code=503, detail="Power line data unavailable right now")
     return lines

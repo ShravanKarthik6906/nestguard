@@ -107,8 +107,9 @@ def conditions(lat, lon, date):
     return hs[min(hour, len(hs) - 1)][1]
 
 
-def assess(w):
-    """Returns (multiplier, reasons, minimum level, checks)."""
+def assess(w, egg_season=True):
+    """Returns (multiplier, reasons, minimum level, checks). egg_season=False drops the
+    cold/rain egg-chilling factor (no eggs outside nesting season)."""
     checks = {"safety": "green", "legal": "green"}
     if not w:
         return 1.0, ["Weather unavailable for this date"], "green", {"safety": None, "legal": None}
@@ -120,7 +121,7 @@ def assess(w):
     # U5: wildlife multiplier
     cold = t is not None and t < COLD_F
     wet = rain >= RAIN_MM
-    if cold or wet:
+    if (cold or wet) and egg_season:
         mult = 1.3
         parts = ([f"{t:.0f}F"] if cold else []) + (["rain"] if wet else [])
         bird_note = " and ".join(parts) + ": eggs chill faster if birds are flushed"
