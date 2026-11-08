@@ -325,3 +325,23 @@ body.pf > .map { display: none; }
   .pf .score .num { font-size: 38px; }
   .pf .complete, .pf .safer { font-size: 13px; }
 }
+
+/* explore and demo walk: exactly one screen, no page scroll (laptop and wider) */
+@media (min-width: 901px) {
+  .pf.explore-mode { height: 100vh; overflow: hidden; }
+  .pf.explore-mode main { min-height: 0; }
+  .pf.explore-mode #v-explore { height: 100%; }
+  .pf.explore-mode .explore { height: 100%; }
+}
+/* during the demo walk the side panel shows only the current stop and the controls */
+.pf.demo-mode #exp-safer, .pf.demo-mode .layers, .pf.demo-mode .legend, .pf.demo-mode #feat { display: none; }
+.pf.demo-mode .side .back { margin-bottom: 8px; }
+.pf.demo-mode .exp-score { margin: 4px 0 10px; padding: 10px 14px; }
+@media (max-height: 820px) and (min-width: 901px) {
+  .pf.demo-mode .side { padding: 14px 18px; }
+  .pf.demo-mode .side-h { font-size: 19px; }
+  .pf.demo-mode .exp-num .num { font-size: 36px; }
+  .pf.demo-mode .demo { margin-top: 8px; padding: 12px 14px; }
+  .pf.demo-mode .demo-t { margin: 8px 0 10px; }
+  .pf.demo-mode .demo-ctl { margin: 10px 0 8px; }
+}

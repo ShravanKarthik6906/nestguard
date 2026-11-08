@@ -466,6 +466,7 @@ function startWalk() {
   scenarioKey = null
   $('date').value = today()
   state.demo = true; demoFirst = null
+  document.body.classList.add('demo-mode')
   state.spot = { ...pts[0], name: 'Demo route, Troy' }
   unlockSteps()
   go('explore')
@@ -499,6 +500,7 @@ async function onDemoEnd() {
 async function endWalk() {
   pauseDemo()
   state.demo = false
+  document.body.classList.remove('demo-mode')
   $('demo-panel').hidden = true
   clearRoute()
   try { await stopDemo() } catch (err) { $('demo-device').textContent = 'Could not reset the device: ' + err.message }
