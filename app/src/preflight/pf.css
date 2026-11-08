@@ -333,15 +333,46 @@ body.pf > .map { display: none; }
   .pf.explore-mode #v-explore { height: 100%; }
   .pf.explore-mode .explore { height: 100%; }
 }
-/* during the demo walk the side panel shows only the current stop and the controls */
-.pf.demo-mode #exp-safer, .pf.demo-mode .layers, .pf.demo-mode .legend, .pf.demo-mode #feat { display: none; }
-.pf.demo-mode .side .back { margin-bottom: 8px; }
-.pf.demo-mode .exp-score { margin: 4px 0 10px; padding: 10px 14px; }
-@media (max-height: 820px) and (min-width: 901px) {
-  .pf.demo-mode .side { padding: 14px 18px; }
-  .pf.demo-mode .side-h { font-size: 19px; }
-  .pf.demo-mode .exp-num .num { font-size: 36px; }
-  .pf.demo-mode .demo { margin-top: 8px; padding: 12px 14px; }
-  .pf.demo-mode .demo-t { margin: 8px 0 10px; }
-  .pf.demo-mode .demo-ctl { margin: 10px 0 8px; }
+/* explore panel, laptop and wider: everything fits on one screen with no scrolling (kept last so it wins) */
+@media (min-width: 901px) {
+  .pf .side { padding: 12px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 0 8px; align-content: start; }
+  .pf .side > * { grid-column: 1 / -1; min-width: 0; }
+  .pf .side .back { margin-bottom: 10px; justify-self: start; }
+  .pf .side-h { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } /* the top bar already says Explore; kept for screen readers */
+  .pf #exp-spot { margin: 0 0 8px; font-size: 13px; }
+  .pf #exp-spot:empty { display: none; }
+  /* the score and the lower-risk spot sit side by side */
+  .pf .side > #exp-score, .pf .side > #exp-safer { grid-column: auto; margin: 0 0 10px; padding: 10px 12px; }
+  .pf .exp-concern, .pf .side .safer-k { font-size: 10px; letter-spacing: 0.08em; }
+  .pf .exp-num .num { font-size: 34px; }
+  .pf .exp-num .of { font-size: 14px; }
+  .pf .exp-driver, .pf .side .safer-n { font-size: 13px; line-height: 1.35; }
+  .pf .side .safer-num { font-size: 26px; }
+  .pf .side .safer-where { display: block; width: 100%; margin: 0; font-size: 13px; }
+  .pf .side .safer-card .btn { width: 100%; margin-top: 8px; padding: 6px 8px; font-size: 13px; }
+  .pf .side > #exp-fly { margin: 0 0 10px; padding: 8px 12px; font-size: 14px; }
+  /* guided demo */
+  .pf .side .demo { margin-top: 0; padding: 10px 12px; }
+  .pf .demo-t { font-size: 13px; line-height: 1.4; margin: 6px 0 8px; }
+  .pf .progress { margin-bottom: 0; }
+  .pf .demo-ctl { margin: 8px 0 6px; }
+  .pf .demo-ctl .btn { padding: 6px 8px; }
+  .pf .demo-end { padding: 2px 0 0; }
+  .pf .demo-end p { font-size: 13px; margin: 0 0 6px; }
+  .pf .demo-end .row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
+  .pf .demo-end .btn, .pf #demo-exit { padding: 6px 8px; font-size: 13px; }
+  .pf #demo-device { margin: 6px 0 0; font-size: 12px; }
+  /* layers and legend, compact */
+  .pf .side .side-l { font-size: 11px; margin: 10px 0 2px; }
+  .pf .layers { display: flex; flex-wrap: wrap; gap: 0 18px; }
+  .pf .layers .side-l, .pf .layers #power-note { width: 100%; }
+  .pf .layers #power-note:empty { display: none; }
+  .pf .tog { padding: 2px 0; font-size: 14px; }
+  .pf .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+  .pf .legend .side-l { grid-column: 1 / -1; }
+  .pf .legend p { margin: 2px 0; font-size: 13px; gap: 8px; }
+  .pf .feat { margin-top: 10px; padding-top: 8px; }
+  .pf .feat > p.small { margin: 0; }
+  /* during the demo, tapping the map does nothing, so drop that hint */
+  .pf #demo-panel:not([hidden]) ~ #feat:has(> p.small:only-child) { display: none; }
 }

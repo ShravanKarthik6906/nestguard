@@ -1,0 +1,17 @@
+[Unit]
+Description=KnowFlyZone flight simulator backend (Node, Gemini + power line lookup)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=nestguard
+WorkingDirectory=/srv/nestguard/sim
+Environment=PORT=3001
+Environment=NODE_ENV=production
+# Private Node 22 installed by setup.sh; the system Node is not touched. Reads GEMINI_API_KEY from backend/.env.
+ExecStart=/opt/node22/bin/node server/index.js
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

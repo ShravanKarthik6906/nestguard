@@ -424,6 +424,10 @@ function renderSpotSummary() {
       `<p class="exp-num"><span class="num mono">${Math.round(r.score)}</span><span class="of mono">/100</span></p>` +
       (driver ? `<p class="exp-driver">${esc(driver)}</p>` : '')
   }
+  // opens the 3D flight simulator (its own page at /fly/) at this spot; not during the guided demo
+  const fly = $('exp-fly')
+  fly.hidden = !r || state.demo
+  if (r) fly.href = `/fly/?lat=${state.spot.lat.toFixed(5)}&lon=${state.spot.lon.toFixed(5)}`
   const sp = r && r.safer_spot
   const box = $('exp-safer')
   box.hidden = !r
@@ -466,7 +470,6 @@ function startWalk() {
   scenarioKey = null
   $('date').value = today()
   state.demo = true; demoFirst = null
-  document.body.classList.add('demo-mode')
   state.spot = { ...pts[0], name: 'Demo route, Troy' }
   unlockSteps()
   go('explore')
@@ -500,8 +503,8 @@ async function onDemoEnd() {
 async function endWalk() {
   pauseDemo()
   state.demo = false
-  document.body.classList.remove('demo-mode')
   $('demo-panel').hidden = true
+  if (state.result) renderSpotSummary()   // brings back buttons hidden during the demo
   clearRoute()
   try { await stopDemo() } catch (err) { $('demo-device').textContent = 'Could not reset the device: ' + err.message }
 }

@@ -10,6 +10,20 @@ SITE_NAMES {
 		reverse_proxy 127.0.0.1:8000
 	}
 
+	# Flight simulator: the page at /fly/ (sim/dist) and its Node backend at /api/*
+	handle /api/* {
+		reverse_proxy 127.0.0.1:3001
+	}
+	handle /fly {
+		redir * /fly/?{query} 308
+	}
+	handle /fly/* {
+		uri strip_prefix /fly
+		root * /srv/nestguard/sim/dist
+		try_files {path} /index.html
+		file_server
+	}
+
 	# Everything else -> the built app
 	handle {
 		root * /srv/nestguard/app/dist
