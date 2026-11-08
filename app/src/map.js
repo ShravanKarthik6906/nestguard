@@ -58,9 +58,11 @@ export function drawZones(zones) {
 }
 
 // The pilot's chosen spot (never a bird location).
+let pinShown = true
 export function setPin(lat, lon) {
   if (!pin) pin = L.circleMarker([lat, lon], { radius: 8, color: '#0e1013', weight: 3, fillColor: '#e8ebef', fillOpacity: 1 }).addTo(map)
   else pin.setLatLng([lat, lon])
+  showPin(pinShown)
 }
 
 export function drawPowerlines(lines) {
@@ -85,21 +87,30 @@ export function showPowerlines(on) {
 }
 
 // Colour the pin with the overall risk at that spot (the zones only show bird risk).
+// The pin is hidden during the guided tour (the tour's own stop markers show the spot and its colour).
+export function showPin(on) {
+  pinShown = on
+  if (pin) pin.setStyle({ opacity: on ? 1 : 0, fillOpacity: on ? 1 : 0 })
+}
 export function setPinRisk(cls) {
   if (!pin) return
   const fill = COLORS[cls] || '#e8ebef'
   pin.setStyle({ fillColor: fill, color: '#0e1013', radius: 9 })
 }
 
-// Demo walk: numbered stops (visited ones in off-white), no connecting line.
-export function drawRoute(points, upTo = -1) {
+// Guided tour stops: a dot plus a label ("2 Downtown 51"). Visited stops show their score in its band
+// colour; the current stop is highlighted. No connecting line: the stops are places, not a path.
+export function drawRoute(points, upTo = -1, scores = []) {
   routeLayer.clearLayers()
   if (!points || points.length < 2) return
   points.forEach((p, i) => {
-    const done = i <= upTo
+    const sc = scores[i]
+    const cls = sc == null ? 'todo' : band(sc).cls
+    const label = `<b>${i + 1}</b> ${p.short || p.name || ''}${sc == null ? '' : ` <span class="stop-sc">${Math.round(sc)}</span>`}`
     L.marker([p.lat, p.lon], {
-      interactive: false, keyboard: false,
-      icon: L.divIcon({ className: 'stop-icon', html: `<span class="stop ${done ? 'done' : ''}">${i + 1}</span>`, iconSize: [20, 20], iconAnchor: [10, 10] }),
+      interactive: false, keyboard: false, zIndexOffset: i === upTo ? 400 : 0,
+      icon: L.divIcon({ className: 'stop-icon', iconSize: [0, 0], iconAnchor: [0, 0],
+        html: `<span class="tour-stop ${cls} ${i === upTo ? 'now' : ''}"><i></i><span class="tour-l">${label}</span></span>` }),
     }).addTo(routeLayer)
   })
 }

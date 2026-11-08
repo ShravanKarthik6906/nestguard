@@ -197,3 +197,10 @@ dd { margin: 0; text-align: right; }
 .verdict.none { color: var(--muted); }
 .dot.unknown { background: transparent; border: 1px solid var(--muted); }
 .hazard:has(.dot.unknown) .detail { color: var(--muted); }
+
+/* logo: the drone mark plus KNOW FLY ZONE, with the silent K and W in amber (reads as "no fly zone") */
+.logo-mark { display: block; width: 40px; height: 30px; flex: none; }
+.logo-word { font-family: 'B612', system-ui, sans-serif; font-weight: 700; font-size: 16px; letter-spacing: 0.08em; color: #e8ebef; white-space: nowrap; }
+.logo-word .silent { color: #d99a1e; }
+.wordmark.logo { display: inline-flex; align-items: center; gap: 10px; }
+.brand:has(> .wordmark.logo) { align-items: center; }

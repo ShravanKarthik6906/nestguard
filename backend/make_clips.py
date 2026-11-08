@@ -27,8 +27,7 @@ PHRASES = ["Low risk.", "Medium risk.", "High risk."]
 PRESETS = [(42.7302, -73.6788, None), (42.7302, -73.6788, "2027-05-15"), (33.70, -118.04, "2021-05-13"),
            (42.7493, -73.694138, None)]
 # live demo walk: RPI campus to the power-line spot, today (same path as app/src/demo.js)
-WALK = [(round(42.7302 + (42.7493 - 42.7302) * i / 9, 5), round(-73.6788 + (-73.694138 + 73.6788) * i / 9, 5), None)
-        for i in range(10)]
+WALK = [(42.7302, -73.6788, None), (42.7317, -73.6889, None), (42.7310, -73.6915, None), (42.7493, -73.6941, None), (42.7466, -73.6677, None)]   # guided tour stops (app/src/demo.js)
 
 
 def units(t):
