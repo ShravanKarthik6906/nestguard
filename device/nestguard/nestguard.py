@@ -482,8 +482,8 @@ class Device:
             pass                                     # endpoint optional
 
     def send_telemetry(self):
-        if self.temp is None and self.light is None:
-            return                     # no sensors on this board (the UNO Q may send them)
+        # The Jetson has no working sensor, so temp and light are often None. Send anyway:
+        # this check-in (with a fresh ts) is how the app knows the device is online.
         try:
             http_json("POST", f"{API}{TELEMETRY_PATH}",
                       {"temp_c": self.temp, "light_pct": self.light,

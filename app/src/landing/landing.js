@@ -6,6 +6,7 @@ import './landing.css'
 import { check, getStats } from '../api.js'
 import { sortHazards, hazardRow } from '../hazards.js'
 import { band, mainDriver } from '../risk.js'
+import { watchDevice } from '../device-status.js'
 
 // The 3D scene is optional: if WebGL is missing or fails, show the text straight away.
 import('./drone.js').catch((err) => {
@@ -103,3 +104,11 @@ if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
     c.classList.toggle('big', !!over)
   }, { passive: true })
 }
+
+// top bar: is the device (Jetson) online right now?
+watchDevice((online) => {
+  const el = document.getElementById('dev-status')
+  if (!el) return
+  el.classList.toggle('on', online)
+  el.querySelector('.ds').textContent = online ? 'online' : 'offline'
+})
