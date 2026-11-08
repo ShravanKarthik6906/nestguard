@@ -272,13 +272,21 @@ function renderSafer(r, hz) {
     }
     return
   }
-  const head = '<p class="safer-t"><b>Lower-risk spot nearby</b> '
-  if (r.bird_score == null) { $('r-safer').innerHTML = head + 'Cannot compare nearby spots: there is no bird data for this area.</p>'; return }
-  if (band(r.score).cls === 'green') { $('r-safer').innerHTML = head + 'This spot is already low risk.</p>'; return }
+  $('r-safer').innerHTML = '<p class="safer-t"><b>Lower-risk spot nearby</b> ' + esc(saferNone(r, hz)) + '</p>'
+}
+// Why there is no lower-risk spot, in plain words (shared by the assessment and the explore panel).
+function saferNone(r, hz) {
+  if (r.bird_score == null) return 'Cannot compare nearby spots: there is no bird data for this area.'
+  if (band(r.score).cls === 'green') return 'This spot is already low risk.'
   const wide = hz.filter((h) => AREA_WIDE.includes(h.type) && (h.level === 'red' || h.level === 'yellow'))
-  $('r-safer').innerHTML = head + 'Nothing within 3 km scores lower, so this is about as good as it gets nearby.' +
-    (wide.length ? ` The main concern (${esc(wide.map((h) => titleOf(h.type).toLowerCase()).join(', '))}) covers the whole area.` : '') +
-    (r.best_time ? ` A better time: ${esc(r.best_time)}.` : '') + '</p>'
+  const worstWide = wide.some((h) => h.level === band(r.score).cls)
+  return 'Nothing within 3 km scores lower.' +
+    (wide.length ? ` The main concern (${wide.map((h) => titleOf(h.type).toLowerCase()).join(', ')}) covers the whole area${worstWide ? ', so moving will not help' : ''}.` : ' This is about as good as it gets nearby.') +
+    (r.best_time ? ' ' + bestTimeSentence(r.best_time) : '')
+}
+function bestTimeSentence(t) {
+  const m = String(t).match(/^Lowest risk(?: \(medium\))?:\s*(.+)$/)
+  return m ? `Best time to fly: ${m[1]}.` : `${t}.`
 }
 function goToSafer(sp) {
   scenarioKey = null
@@ -406,14 +414,29 @@ function renderSpotSummary() {
   const r = state.result
   if (!state.spot) return
   const bd = band(r && r.score)
-  $('exp-spot').innerHTML = r ? `Your spot: <b>${esc(state.spot.name || 'selected spot')}</b>, risk <b class="mono">${Math.round(r.score)}/100</b> (${esc(bd.word.toLowerCase())})` : ''
+  $('exp-spot').innerHTML = r ? `Your spot: <b>${esc(state.spot.name || 'selected spot')}</b>` : ''
+  const sc = $('exp-score')
+  sc.hidden = !r
+  if (r) {
+    const driver = String(r.message || '').replace(/^Risk \d+\/100:\s*/, '')
+    sc.className = `exp-score ${bd.cls}`
+    sc.innerHTML = `<span class="exp-concern">${esc(CONCERN[bd.cls])}</span>` +
+      `<p class="exp-num"><span class="num mono">${Math.round(r.score)}</span><span class="of mono">/100</span></p>` +
+      (driver ? `<p class="exp-driver">${esc(driver)}</p>` : '')
+  }
   const sp = r && r.safer_spot
   const box = $('exp-safer')
-  box.hidden = !(sp && Number.isFinite(sp.lat))
-  if (box.hidden) return
-  box.innerHTML = `<span class="safer-k">Lower-risk spot nearby</span><p class="safer-main"><span class="safer-num mono">${esc(sp.score)}</span><span class="of mono">/100</span>` +
-    `<span class="safer-where">${esc(sp.distance_km)} km ${esc(sp.direction)}</span></p><button class="btn primary" type="button">Check this spot</button>`
-  box.querySelector('button').addEventListener('click', () => goToSafer(sp))
+  box.hidden = !r
+  if (!r) return
+  if (sp && Number.isFinite(sp.lat)) {
+    box.className = 'safer-card'
+    box.innerHTML = `<span class="safer-k">Lower-risk spot nearby</span><p class="safer-main"><span class="safer-num mono">${esc(sp.score)}</span><span class="of mono">/100</span>` +
+      `<span class="safer-where">${esc(sp.distance_km)} km ${esc(sp.direction)}</span></p><button class="btn primary" type="button">Check this spot</button>`
+    box.querySelector('button').addEventListener('click', () => goToSafer(sp))
+  } else {
+    box.className = 'safer-card none'
+    box.innerHTML = `<span class="safer-k">Lower-risk spot nearby</span><p class="safer-n">${esc(saferNone(r, r.hazards || []))}</p>`
+  }
 }
 
 // tapping the map: choose a spot (pick mode) or check that spot
