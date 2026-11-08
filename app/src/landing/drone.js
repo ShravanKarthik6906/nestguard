@@ -18,7 +18,8 @@ renderer.toneMappingExposure = 1.1
 renderer.shadowMap.enabled = true
 renderer.shadowMap.type = THREE.PCFSoftShadowMap
 const hero = document.getElementById('hero')
-hero.prepend(renderer.domElement)
+renderer.domElement.className = 'stage'
+document.body.prepend(renderer.domElement)
 
 const scene = new THREE.Scene()
 scene.background = new THREE.Color(0x0e1013)
@@ -252,6 +253,33 @@ function setupFlights() {
     u.t0 = i * STAGGER
   })
 }
+// scroll-follow state: s = 0 in the hero, 1 once scrolled past it; lag/vel make it trail fast scrolling
+const follow = { s: 0, lag: 0, vel: 0, lastY: scrollY, lastT: null }
+const dock = { pos: new THREE.Vector3(), scale: 0.36, show: true }
+const tmpDock = new THREE.Vector3(), tmpOff = new THREE.Vector3()
+function updateDock() {
+  // park the drone in the empty space to the right of the text column, a bit above the middle of the screen
+  const info = document.querySelector('.info')
+  const right = info ? info.getBoundingClientRect().right : innerWidth
+  const space = innerWidth - right
+  dock.show = space > 240
+  const ndc = new THREE.Vector2(((right + space / 2) / innerWidth) * 2 - 1, 0.12)
+  const ray = new THREE.Raycaster(); ray.setFromCamera(ndc, camera)
+  const dir = new THREE.Vector3(); camera.getWorldDirection(dir)
+  const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(dir.negate(), new THREE.Vector3())
+  ray.ray.intersectPlane(plane, dock.pos)
+  dock.scale = THREE.MathUtils.clamp(space / 900, 0.26, 0.42)
+}
+// time-based smoothing, so it behaves the same at 30, 60 or 120 frames per second
+function updateFollow(t) {
+  const dt = follow.lastT === null ? 1 / 60 : Math.min(0.1, Math.max(0, t - follow.lastT)); follow.lastT = t
+  const k = (rate) => 1 - Math.exp(-rate * dt)
+  const target = THREE.MathUtils.clamp((scrollY - innerHeight * 0.25) / (innerHeight * 0.55), 0, 1)
+  follow.s += (target - follow.s) * k(4)
+  const v = dt > 0 ? (scrollY - follow.lastY) / (dt * 60) : 0; follow.lastY = scrollY // pixels per 60th of a second
+  follow.vel += (v - follow.vel) * k(9)
+  follow.lag += (THREE.MathUtils.clamp(-v * 0.004, -0.5, 0.5) - follow.lag) * k(6)
+}
 const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2)
 const easeOutCubic = (t) => 1 - (1 - t) ** 3
 const bez = (u, k, out) => {
@@ -288,6 +316,7 @@ const pointer = { x: 0, y: 0 }
 const TRAIL_PTS = 20, TRAIL_TIME = 0.22
 const tp = new THREE.Vector3(), tq = new THREE.Quaternion()
 function renderAt(t) {
+  if (!capture) updateFollow(t)
   for (const part of parts) {
     const { obj } = part, u = obj.userData
     const phase = pose(part, t, obj.position, obj.quaternion)
@@ -356,6 +385,21 @@ function renderAt(t) {
   drone.rotation.y = hoverYaw + dYaw * fly
   drone.rotation.z = lerp(hoverRoll, bank, fly) + pointer.x * 0.06
   drone.rotation.x = lerp(hoverPitch, 0.05 + speed * 0.05, fly) - pointer.y * 0.03
+
+  // below the hero: shrink and hover beside the text, following the page as it scrolls
+  const sd = follow.s
+  if (sd > 0.001) {
+    const dockYaw = -0.55 + 0.18 * Math.sin(t * 0.6)
+    let dy = dockYaw - drone.rotation.y; dy = Math.atan2(Math.sin(dy), Math.cos(dy))
+    drone.position.lerp(tmpDock.copy(dock.pos).add(tmpOff.set(0.05 * Math.sin(t * 0.9), 0.06 * Math.sin(t * 1.4) - follow.lag, 0)), sd)
+    drone.rotation.y += dy * sd
+    drone.rotation.z = lerp(drone.rotation.z, 0.06 * Math.sin(t * 1.1), sd)
+    drone.rotation.x = lerp(drone.rotation.x, -0.05 + THREE.MathUtils.clamp(follow.vel * 0.004, -0.35, 0.35), sd)
+  }
+  drone.scale.setScalar(0.9 * lerp(1, dock.show ? dock.scale : 0.001, sd))
+  floor.material.opacity = 0.35 * (1 - sd)
+  // no room beside the text (phones): fade the whole drone out below the hero instead of covering words
+  renderer.domElement.style.opacity = dock.show ? '' : String(Math.max(0, 1 - sd * 1.6))
   if (after > 0.25 && !readyShown) {
     readyShown = true
     document.body.classList.add('ready')
@@ -363,9 +407,9 @@ function renderAt(t) {
   composer.render()
 }
 
-hero.addEventListener('pointermove', (e) => { pointer.x = e.clientX / innerWidth - 0.5; pointer.y = e.clientY / innerHeight - 0.5 })
+addEventListener('pointermove', (e) => { pointer.x = e.clientX / innerWidth - 0.5; pointer.y = e.clientY / innerHeight - 0.5 })
 function resize() {
-  const w = hero.clientWidth, h = hero.clientHeight
+  const w = innerWidth, h = innerHeight
   renderer.setSize(w, h, false); composer.setSize(w, h)
   for (const m of trailMats) m.resolution.set(w, h)
   camera.aspect = w / h
@@ -374,6 +418,8 @@ function resize() {
   camera.position.set(0, 3.3, portrait ? 9.2 : 8.4)
   camera.lookAt(0, portrait ? -2.6 : -0.75, 0)
   camera.updateProjectionMatrix()
+  camera.updateMatrixWorld()
+  updateDock()
 }
 addEventListener('resize', resize); resize(); setupFlights()
 
@@ -390,6 +436,4 @@ else {
   addEventListener('keydown', skip)
   const loop = () => renderAt((performance.now() - start) / 1000)
   renderer.setAnimationLoop(loop)
-  // stop drawing while the hero is scrolled out of view (saves battery)
-  new IntersectionObserver(([e]) => renderer.setAnimationLoop(e.isIntersecting ? loop : null)).observe(hero)
 }

@@ -33,56 +33,36 @@
         <span class="label">The problem</span>
         <h2>The biggest risks are invisible from the ground.</h2>
         <p>A pilot standing in a field sees blue sky. They cannot see the gusts at 120 feet, the cloud base dropping below the FAA limit, the red-tailed hawk that defends this tree line, the migrating flock passing overhead, or the power line hidden against the trees. Each of those can bring a drone down, and a falling drone can hurt people and wildlife.</p>
-        <div class="story">
-          <span class="big">1,500</span>
-          <div>
-            <p class="lead">eggs abandoned at Bolsa Chica, California, on May 13, 2021.</p>
-            <p>A drone crashed into a nesting colony of terns and the birds left their nests. A single check before that flight would have said Don't fly.</p>
-            <a class="link" href="/preflight.html?scenario=bolsa">Replay that check</a>
-          </div>
-        </div>
+        <p class="story"><span class="big">1,500</span> eggs were abandoned at Bolsa Chica, California, on May 13, 2021, after a drone crashed into a nesting colony of terns and the birds left their nests. A single check before that flight would have said Don't fly. <a class="link" href="/preflight.html?scenario=bolsa">Replay that check</a></p>
       </section>
 
       <section id="how">
         <span class="label">How it works</span>
         <h2>Ten hazards, checked together, one answer.</h2>
-        <ol class="steps">
-          <li><span><b>Pick a spot and a time.</b> Tap the map, use your location, or let the controller device send its GPS position.</span></li>
-          <li><span><b>NestGuard checks every hazard at once.</b> Weather at drone height, FAA weather minimums, birds, power lines and people below, from the sources in the table.</span></li>
-          <li><span><b>You get Go, Wait or Don't fly.</b> With the reason, the best time to fly instead, and a spoken alert so your eyes stay on the drone.</span></li>
-        </ol>
-        <table class="hazards-table">
-          <thead><tr><th>Hazard</th><th>What we check</th><th>Source</th></tr></thead>
-          <tbody>
-            <tr><td>Wind and rain</td><td>Wind and gusts at drone height, rain</td><td>Open-Meteo</td></tr>
-            <tr><td>Cloud base and visibility</td><td>FAA Part 107: 3 statute miles of visibility, 500 ft below clouds</td><td>Open-Meteo</td></tr>
-            <tr><td>Raptors</td><td>Recent hawk and eagle sightings, which attack drones</td><td>eBird, iNaturalist</td></tr>
-            <tr><td>Nesting</td><td>Nesting season and colonies nearby</td><td>eBird, iNaturalist</td></tr>
-            <tr><td>Migration</td><td>Spring and fall migration activity</td><td>eBird</td></tr>
-            <tr><td>Power lines</td><td>Distance to the nearest line</td><td>OpenStreetMap</td></tr>
-            <tr><td>People below</td><td>How built up the area is</td><td>OpenStreetMap</td></tr>
-            <tr><td>Air quality</td><td>Smoke and haze that cut visibility</td><td>Open-Meteo</td></tr>
-          </tbody>
-        </table>
+        <p class="step"><span class="num">01</span> <b>Pick a spot and a time.</b> Tap the map, use your location, or let the controller device send its GPS position.</p>
+        <p class="step"><span class="num">02</span> <b>NestGuard checks every hazard at once.</b> Weather at drone height, FAA weather minimums, birds, power lines and people below.</p>
+        <p class="step"><span class="num">03</span> <b>You get Go, Wait or Don't fly.</b> With the reason, the best time to fly instead, and a spoken alert so your eyes stay on the drone.</p>
+        <p class="flow"><b>Wind and rain.</b> Wind and gusts at drone height, and rain, from Open-Meteo.
+          <b>Cloud base and visibility.</b> The FAA Part 107 minimums: 3 statute miles of visibility and 500 feet below the clouds.
+          <b>Raptors.</b> Recent hawk and eagle sightings from eBird and iNaturalist, because they attack drones.
+          <b>Nesting and migration.</b> Nesting season, colonies nearby, and spring and fall migration activity.
+          <b>Power lines and people below.</b> The distance to the nearest line and how built up the area is, from OpenStreetMap.
+          <b>Air quality.</b> Smoke and haze that cut visibility.</p>
       </section>
 
       <section id="live">
         <span class="label">Live right now</span>
-        <h2>Today at RPI, Troy, New York</h2>
-        <p class="muted">This is the real pre-flight check, run as you load this page.</p>
-        <div class="live">
-          <div id="live-verdict" class="verdict skeleton"></div>
-          <p id="live-message" class="live-message"></p>
-          <ul id="live-hazards" class="hazards"></ul>
-          <p id="live-stats" class="muted mono"></p>
-          <a class="btn solid" href="/preflight.html">Open the pre-flight check</a>
-        </div>
+        <h2>Right now at RPI, Troy: <span id="live-verdict" class="word">checking</span></h2>
+        <p id="live-message" class="live-message"></p>
+        <ul id="live-hazards" class="hazards"></ul>
+        <p id="live-stats" class="muted"></p>
+        <p><a class="btn solid" href="/preflight.html">Open the pre-flight check</a></p>
       </section>
 
       <section id="device">
         <span class="label">The device</span>
         <h2>A small box clipped to the controller.</h2>
-        <p>It reads the same answer every five seconds, lights up green, yellow or red, and flashes its screen when the pilot gets close to a risky zone. It also reports temperature and light, so the app can show that the device is online. For indoor demos the app walks a pretend path, and the device follows it.</p>
+        <p>It reads the same answer every five seconds, lights up green, yellow or red, and flashes its screen when the pilot gets close to a risky zone. It also reports temperature and light, so the app can show that it is online. For indoor demos the app walks a pretend path and the device follows it.</p>
       </section>
 
       <section id="privacy">
@@ -93,24 +73,20 @@
 
       <section id="built">
         <span class="label">Built with</span>
-        <dl class="built">
-          <div><dt>MongoDB Atlas</dt><dd>Blurred bird zones with geospatial "near me" search</dd></div>
-          <div><dt>Tiger Data</dt><dd>Sighting trends, device history and check statistics</dd></div>
-          <div><dt>Google Gemini</dt><dd>One plain sentence explaining each answer</dd></div>
-          <div><dt>Fish Audio</dt><dd>The spoken alerts</dd></div>
-          <div><dt>Vultr</dt><dd>One server for the app and the API, over https</dd></div>
-          <div><dt>Open data</dt><dd>eBird, iNaturalist, Open-Meteo, OpenStreetMap</dd></div>
-        </dl>
+        <p class="flow"><b>MongoDB Atlas</b> holds the blurred bird zones and answers the "near me" search.
+          <b>Tiger Data</b> keeps sighting trends, device history and the check counts.
+          <b>Google Gemini</b> writes one plain sentence explaining each answer.
+          <b>Fish Audio</b> speaks the alerts.
+          <b>Vultr</b> runs the app and the API on one server over https.
+          The data comes from <b>eBird</b>, <b>iNaturalist</b>, <b>Open-Meteo</b> and <b>OpenStreetMap</b>.</p>
       </section>
 
       <section id="team">
         <span class="label">Team</span>
-        <dl class="built">
-          <div><dt>Udaya</dt><dd>Back end, data and the risk score</dd></div>
-          <div><dt>Ryan</dt><dd>The controller device</dd></div>
-          <div><dt>Shravan</dt><dd>The app, spoken alerts and hosting</dd></div>
-          <div><dt>Dhruv</dt><dd>Device mount, demo and Devpost</dd></div>
-        </dl>
+        <p class="flow"><b>Udaya</b> built the back end, the data and the risk score.
+          <b>Ryan</b> built the controller device.
+          <b>Shravan</b> built the app, the spoken alerts and the hosting.
+          <b>Dhruv</b> built the device mount and runs the demo.</p>
       </section>
     </main>
 

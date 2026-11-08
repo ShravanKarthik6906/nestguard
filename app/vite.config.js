@@ -8,6 +8,7 @@ const paths = ['/zones', '/check', '/powerlines', '/stats', '/trend', '/device',
 
 export default defineConfig({
   build: {
+    chunkSizeWarningLimit: 700, // the 3D drone (three.js) is ~570 kB and only loads on the landing page
     rollupOptions: { input: { main: 'index.html', preflight: 'preflight.html', privacy: 'privacy.html', terms: 'terms.html' } },
   },
   server: {
