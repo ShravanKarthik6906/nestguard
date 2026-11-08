@@ -7,10 +7,10 @@ let map, zoneLayer, powerLayer, pin
 
 export function createMap(el, center) {
   map = L.map(el).setView([center.lat, center.lon], 14)
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  // Standard OpenStreetMap tiles (free, no key), darkened with a CSS filter in style.css
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
-    subdomains: 'abcd',
-    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+    attribution: '&copy; OpenStreetMap contributors',
   }).addTo(map)
   zoneLayer = L.layerGroup().addTo(map)
   powerLayer = L.layerGroup().addTo(map)

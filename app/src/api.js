@@ -94,5 +94,6 @@ export async function getPowerlines(lat, lon, radiusKm) {
     const near = (line) => line.coords.some(([a, b]) => distM(lat, lon, a, b) <= (radiusKm + 1) * 1000)
     return { data: mockPowerlines.filter(near), source: 'mock' }
   }
-  return getJSON(`/powerlines?lat=${r4(lat)}&lon=${r4(lon)}&radius_km=${radiusKm}`)
+  // loads in the background, and a new area can take a while on the server (OpenStreetMap lookup)
+  return getJSON(`/powerlines?lat=${r4(lat)}&lon=${r4(lon)}&radius_km=${radiusKm}`, 15000)
 }
