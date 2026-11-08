@@ -48,8 +48,8 @@ h1 { font-size: clamp(34px, 5.5vw, 62px); line-height: 1.08; margin: 0 0 10px; }
 }
 section { padding: 56px 0; }
 /* non-text parts of a section (hazard list, buttons) simply fade in */
-section.reveal > :not(.fly) { opacity: 0; transition: opacity 0.8s ease 0.4s; }
-section.reveal.in > :not(.fly) { opacity: 1; }
+section.reveal > :not(.fly):not(svg):not(ol):not(.pv) { opacity: 0; transition: opacity 0.8s ease 0.4s; }
+section.reveal.in > :not(.fly):not(svg):not(ol):not(.pv) { opacity: 1; }
 /* words whoosh into place from the section's direction, with a short streak pointing back where they came from */
 .w { display: inline-block; white-space: nowrap; }
 .fly .w { position: relative; opacity: 0; }
@@ -120,3 +120,49 @@ section p { font-size: 18px; line-height: 1.7; margin: 0 0 18px; }
   .hazard { grid-template-columns: 18px 1fr 10px; } .hazard .name { grid-column: 2; grid-row: 1; } .hazard .detail { grid-column: 2; grid-row: 2; } .dot { grid-column: 3; grid-row: 1; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; } html { scroll-behavior: auto; } section.reveal > * { opacity: 1 !important; } }
+
+/* ---------- visuals (thin custom line drawings; each piece whooshes in from its own direction) */
+.wv { opacity: 0; }
+section.in .wv { animation: whoosh 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: calc(0.25s + var(--i) * 0.12s); }
+svg .wv { transform-box: fill-box; }
+.radar { width: 100%; max-width: 760px; height: auto; display: block; margin: 8px 0 18px; overflow: visible; }
+.radar .rings circle { fill: none; stroke: var(--line); stroke-dasharray: 3 5; }
+.radar .ray { stroke-width: 1; stroke-dasharray: 4 6; opacity: 0; }
+section.in .radar .ray { animation: ray 0.9s ease 1.1s both; }
+@keyframes ray { from { opacity: 0; stroke-dashoffset: 60; } to { opacity: 0.55; stroke-dashoffset: 0; } }
+.radar .hg { fill: none; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+.radar text { fill: var(--text); font-family: 'B612 Mono', monospace; font-size: 14px; letter-spacing: 0.03em; }
+.radar .core .arm { stroke: #8a929d; stroke-width: 3; }
+.radar .core .rotor { fill: none; stroke: #8a929d; stroke-width: 1.2; }
+.radar .core .body { fill: #e8ebef; }
+.flowline { list-style: none; margin: 10px 0 18px; padding: 0; display: flex; gap: 0; align-items: flex-start; }
+.flowline li { flex: 1; position: relative; padding: 0 18px 0 0; font-size: 20px; font-weight: 700; }
+.flowline li + li::before { content: ''; position: absolute; left: -18px; right: calc(100% + 0px); top: 14px; }
+.flowline .n { display: block; font-family: 'B612 Mono', monospace; font-weight: 400; font-size: 13px; color: var(--muted); padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid var(--line); }
+.verdicts b { font-size: 22px; } .verdicts .g { color: var(--go); } .verdicts .y { color: var(--wait); } .verdicts .r { color: var(--stop); }
+.credit { font-size: 14px !important; color: var(--muted); }
+.names { font-size: 22px !important; font-weight: 700; letter-spacing: 0.01em; }
+.device-art { width: 100%; max-width: 520px; height: auto; display: block; margin: 8px 0 14px; overflow: visible; }
+.device-art .ctl { fill: none; stroke: #8a929d; stroke-width: 2; }
+.device-art .stick { fill: #8a929d; }
+.device-art .box { fill: #14171b; stroke: #e8ebef; stroke-width: 1.5; }
+.device-art .lcd { fill: #1d2b1a; }
+.device-art .lcdt { fill: #b9e27a; font-family: 'B612 Mono', monospace; font-size: 15px; letter-spacing: 0.08em; }
+.device-art .led-red { fill: #d64545; } .device-art .led-off { fill: #2a3a2e; }
+.device-art .tag { fill: #8a929d; font-family: 'B612 Mono', monospace; font-size: 11px; }
+section.in .device-art .lcdt { animation: blink 1.2s steps(1) 1.4s 3; }
+@keyframes blink { 50% { opacity: 0.2; } }
+.pv { display: flex; gap: 28px; margin: 8px 0 14px; }
+.pv figure { margin: 0; flex: 1; max-width: 240px; }
+.pv svg { width: 100%; height: auto; display: block; }
+.pv .grid line { stroke: var(--line); stroke-width: 1; }
+.pv .cross { stroke: #d64545; stroke-width: 2; }
+.pv .zone { fill: rgba(217, 154, 30, 0.35); stroke: #d99a1e; stroke-width: 1.5; }
+.pv figcaption { margin-top: 10px; font-size: 15px; color: var(--muted); }
+.pv figcaption b { color: var(--text); }
+.story .big { margin-right: 14px; }
+@media (max-width: 640px) {
+  .flowline { flex-direction: column; gap: 18px; }
+  .radar text { font-size: 18px; }
+}
+@media (prefers-reduced-motion: reduce) { .wv { opacity: 1 !important; } .radar .ray { opacity: 0.55; } }

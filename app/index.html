@@ -29,25 +29,37 @@
     </header>
 
     <main class="info">
-      <section id="problem" class="place-left dir-r">
+      <section id="problem" class="place-left place-wide dir-r">
         <span class="label">The problem</span>
         <h2>The biggest risks are invisible from the ground.</h2>
-        <p>A pilot standing in a field sees blue sky. They cannot see the gusts at 120 feet, the cloud base dropping below the FAA limit, the red-tailed hawk that defends this tree line, the migrating flock passing overhead, or the power line hidden against the trees. Each of those can bring a drone down, and a falling drone can hurt people and wildlife.</p>
-        <p class="story"><span class="big">1,500</span> eggs were abandoned at Bolsa Chica, California, on May 13, 2021, after a drone crashed into a nesting colony of terns and the birds left their nests. A single check before that flight would have said Don't fly. <a class="link" href="/preflight.html?scenario=bolsa">Replay that check</a></p>
+        <svg class="radar" viewBox="-90 0 840 430" role="img" aria-label="A drone surrounded by hazards: gusts, low clouds, a hawk, a migrating flock, a power line and people below">
+<g class="rings"><circle cx="330" cy="215" r="55"/><circle cx="330" cy="215" r="110"/><circle cx="330" cy="215" r="165"/></g>
+<line class="ray" x1="330" y1="215" x2="150" y2="95" stroke="#d99a1e"/>
+<line class="ray" x1="330" y1="215" x2="330" y2="42" stroke="#d99a1e"/>
+<line class="ray" x1="330" y1="215" x2="520" y2="110" stroke="#d64545"/>
+<line class="ray" x1="330" y1="215" x2="530" y2="300" stroke="#d99a1e"/>
+<line class="ray" x1="330" y1="215" x2="150" y2="320" stroke="#d64545"/>
+<line class="ray" x1="330" y1="215" x2="330" y2="388" stroke="#d99a1e"/>
+<g class="wv" style="--fx:-198px;--fy:-132px;--i:0"><g transform="translate(134 79) scale(2)" class="hg" stroke="#d99a1e"><path d="M2 6h8.5a2 2 0 1 0-2-2M2 10h11a2 2 0 1 1-2 2"/></g><text x="124" y="100" text-anchor="end">Gusts at 120 ft</text></g>
+<g class="wv" style="--fx:0px;--fy:-190px;--i:1"><g transform="translate(314 26) scale(2)" class="hg" stroke="#d99a1e"><path d="M4 12h8a3 3 0 0 0 0-6 4 4 0 0 0-7.6-.8A3.2 3.2 0 0 0 4 12z"/></g><text x="330" y="17" text-anchor="middle">Cloud base too low</text></g>
+<g class="wv" style="--fx:209px;--fy:-116px;--i:2"><g transform="translate(504 94) scale(2)" class="hg" stroke="#d64545"><path d="M1.5 7.5c2.5-2.5 4.5-2 6.5 1 2-3 4-3.5 6.5-1"/><path d="M8 8.5v3"/></g><text x="546" y="115" text-anchor="start">Hawk nearby</text></g>
+<g class="wv" style="--fx:220px;--fy:94px;--i:3"><g transform="translate(514 284) scale(2)" class="hg" stroke="#d99a1e"><path d="M2 6l2 1.5L6 6M7 10l2 1.5 2-1.5M10 4l2 1.5L14 4"/></g><text x="556" y="305" text-anchor="start">Migrating flock</text></g>
+<g class="wv" style="--fx:-198px;--fy:116px;--i:4"><g transform="translate(134 304) scale(2)" class="hg" stroke="#d64545"><path d="M8 1.5 4.5 14.5M8 1.5l3.5 13M3.5 5h9M4.5 9h7"/></g><text x="124" y="325" text-anchor="end">Power line, 40 m</text></g>
+<g class="wv" style="--fx:0px;--fy:190px;--i:5"><g transform="translate(314 372) scale(2)" class="hg" stroke="#d99a1e"><circle cx="5.5" cy="5" r="1.8"/><circle cx="10.5" cy="5" r="1.8"/><path d="M2.5 13c0-2.5 1.5-4 3-4s3 1.5 3 4M7.5 13c0-2.5 1.5-4 3-4s3 1.5 3 4"/></g><text x="330" y="433" text-anchor="middle">People below</text></g>
+<g transform="translate(330 215)"><g class="wv core" style="--fx:0px;--fy:-60px;--i:6"><path d="M-22 -22 L22 22 M22 -22 L-22 22" class="arm"/><circle cx="-22" cy="-22" r="13" class="rotor"/><circle cx="22" cy="-22" r="13" class="rotor"/><circle cx="-22" cy="22" r="13" class="rotor"/><circle cx="22" cy="22" r="13" class="rotor"/><rect x="-12" y="-16" width="24" height="32" rx="6" class="body"/></g>
+</g></svg>
+        <p class="story"><span class="big">1,500</span> eggs abandoned at Bolsa Chica after one drone crash, May 13, 2021. <a class="link" href="/preflight.html?scenario=bolsa">Replay that check</a></p>
       </section>
 
-      <section id="how" class="place-right dir-l">
+      <section id="how" class="place-right place-wide dir-l">
         <span class="label">How it works</span>
         <h2>Ten hazards, checked together, one answer.</h2>
-        <p class="step"><span class="num">01</span> <b>Pick a spot and a time.</b> Tap the map, use your location, or let the controller device send its GPS position.</p>
-        <p class="step"><span class="num">02</span> <b>NestGuard checks every hazard at once.</b> Weather at drone height, FAA weather minimums, birds, power lines and people below.</p>
-        <p class="step"><span class="num">03</span> <b>You get Go, Wait or Don't fly.</b> With the reason, the best time to fly instead, and a spoken alert so your eyes stay on the drone.</p>
-        <p class="flow"><b>Wind and rain.</b> Wind and gusts at drone height, and rain, from Open-Meteo.
-          <b>Cloud base and visibility.</b> The FAA Part 107 minimums: 3 statute miles of visibility and 500 feet below the clouds.
-          <b>Raptors.</b> Recent hawk and eagle sightings from eBird and iNaturalist, because they attack drones.
-          <b>Nesting and migration.</b> Nesting season, colonies nearby, and spring and fall migration activity.
-          <b>Power lines and people below.</b> The distance to the nearest line and how built up the area is, from OpenStreetMap.
-          <b>Air quality.</b> Smoke and haze that cut visibility.</p>
+        <ol class="flowline">
+          <li class="wv" style="--fx:-140px;--fy:0px;--i:0"><span class="n">01</span><span>Pick a spot</span></li>
+          <li class="wv" style="--fx:-140px;--fy:0px;--i:1"><span class="n">02</span><span>Ten hazards checked</span></li>
+          <li class="wv" style="--fx:-140px;--fy:0px;--i:2"><span class="n">03</span><span class="verdicts"><b class="g">Go</b> <b class="y">Wait</b> <b class="r">Don't fly</b></span></li>
+        </ol>
+        <p class="credit">Data from eBird, iNaturalist, Open-Meteo, OpenStreetMap and the FAA Part 107 rules. Bird locations are blurred to a 1 km grid.</p>
       </section>
 
       <section id="live" class="place-center dir-u">
@@ -55,38 +67,40 @@
         <h2>Right now at RPI, Troy: <span id="live-verdict" class="word">checking</span></h2>
         <p id="live-message" class="live-message"></p>
         <ul id="live-hazards" class="hazards"></ul>
-        <p id="live-stats" class="muted"></p>
+        <p id="live-stats" class="credit"></p>
         <p><a class="btn solid" href="/preflight.html">Open the pre-flight check</a></p>
       </section>
 
       <section id="device" class="place-left place-indent dir-d">
         <span class="label">The device</span>
         <h2>A small box clipped to the controller.</h2>
-        <p>It reads the same answer every five seconds, lights up green, yellow or red, and flashes its screen when the pilot gets close to a risky zone. It also reports temperature and light, so the app can show that it is online. For indoor demos the app walks a pretend path and the device follows it.</p>
+        <svg class="device-art" viewBox="0 0 520 300" role="img" aria-label="A drone controller with the NestGuard box clipped on top, its screen reading DON'T FLY 98 and a red light on">
+  <g class="wv" style="--fx:0px;--fy:120px;--i:0">
+    <rect x="70" y="140" width="380" height="140" rx="40" class="ctl"/>
+    <circle cx="150" cy="210" r="30" class="ctl"/><circle cx="150" cy="210" r="7" class="stick"/>
+    <circle cx="370" cy="210" r="30" class="ctl"/><circle cx="370" cy="210" r="7" class="stick"/>
+    <line x1="110" y1="140" x2="80" y2="40" class="ctl"/><line x1="410" y1="140" x2="440" y2="40" class="ctl"/>
+  </g>
+  <g class="wv" style="--fx:0px;--fy:-140px;--i:3">
+    <rect x="165" y="40" width="190" height="100" rx="6" class="box"/>
+    <rect x="182" y="56" width="156" height="46" rx="2" class="lcd"/>
+    <text x="260" y="76" text-anchor="middle" class="lcdt">DON'T FLY</text>
+    <text x="260" y="96" text-anchor="middle" class="lcdt">RISK 98</text>
+    <circle cx="200" cy="121" r="6" class="led-red"/><circle cx="222" cy="121" r="6" class="led-off"/>
+    <text x="340" y="126" text-anchor="end" class="tag">NestGuard</text>
+  </g>
+</svg>
+        <p class="credit">Green, yellow or red, with the answer on its screen every five seconds.</p>
       </section>
 
-      <section id="privacy" class="place-right dir-ur">
-        <span class="label">Privacy</span>
-        <h2>We never show where birds nest.</h2>
-        <p>Exact nest and sighting locations stay on our server. The map only shows zones blurred to a grid of about 1 km, so nobody can use NestGuard to find nests. We keep no accounts and never store your exact position. <a class="link" href="/privacy.html">Read the privacy page</a></p>
-      </section>
-
-      <section id="built" class="place-center place-wide dir-ul">
+      <section id="built" class="place-right dir-ul">
         <span class="label">Built with</span>
-        <p class="flow"><b>MongoDB Atlas</b> holds the blurred bird zones and answers the "near me" search.
-          <b>Tiger Data</b> keeps sighting trends, device history and the check counts.
-          <b>Google Gemini</b> writes one plain sentence explaining each answer.
-          <b>Fish Audio</b> speaks the alerts.
-          <b>Vultr</b> runs the app and the API on one server over https.
-          The data comes from <b>eBird</b>, <b>iNaturalist</b>, <b>Open-Meteo</b> and <b>OpenStreetMap</b>.</p>
+        <p class="names">MongoDB Atlas · Tiger Data · Google Gemini · Fish Audio · Vultr</p>
       </section>
 
-      <section id="team" class="place-right dir-l">
+      <section id="team" class="place-left dir-r">
         <span class="label">Team</span>
-        <p class="flow"><b>Udaya</b> built the back end, the data and the risk score.
-          <b>Ryan</b> built the controller device.
-          <b>Shravan</b> built the app, the spoken alerts and the hosting.
-          <b>Dhruv</b> built the device mount and runs the demo.</p>
+        <p class="names">Udaya · Ryan · Shravan · Dhruv</p>
       </section>
     </main>
 

@@ -59,7 +59,10 @@ export function drawPowerlines(lines) {
   powerLayer.clearLayers()
   for (const l of lines) {
     if (Array.isArray(l.coords) && l.coords.length > 1) {
-      L.polyline(l.coords, { color: COLORS.red, weight: 3, opacity: 1, interactive: false }).addTo(powerLayer)
+      // drawn like a map's power line (thin wire plus pylon dots) so it never looks like a red no-fly zone
+      L.polyline(l.coords, { color: '#0e1013', weight: 4, opacity: 0.6, interactive: false }).addTo(powerLayer)
+      L.polyline(l.coords, { color: '#f2f4f6', weight: 1.6, opacity: 0.95, interactive: false }).addTo(powerLayer)
+      L.polyline(l.coords, { color: '#f2f4f6', weight: 6, opacity: 0.95, dashArray: '0 22', lineCap: 'round', interactive: false }).addTo(powerLayer)
     }
   }
 }
