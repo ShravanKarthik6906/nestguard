@@ -313,20 +313,26 @@ function setupFlights() {
 }
 // scroll-follow state: s = 0 in the hero, 1 once scrolled past it; lag/vel make it trail fast scrolling
 const follow = { s: 0, lag: 0, vel: 0, lastY: scrollY, lastT: null }
-const dock = { pos: new THREE.Vector3(), scale: 0.36, show: true }
+const dock = { pos: new THREE.Vector3(), target: new THREE.Vector3(), scale: 0.36, show: true, showAmt: 1, ready: false }
 const tmpDock = new THREE.Vector3(), tmpOff = new THREE.Vector3()
 function updateDock() {
-  // park the drone in the empty space to the right of the text column, a bit above the middle of the screen
-  const info = document.querySelector('.info')
-  const right = info ? info.getBoundingClientRect().right : innerWidth
-  const space = innerWidth - right
-  dock.show = space > 240
-  const ndc = new THREE.Vector2(((right + space / 2) / innerWidth) * 2 - 1, 0.12)
+  // the section in the middle of the screen; park the drone in the larger empty space beside it
+  const secs = document.querySelectorAll('.info section')
+  let active = null
+  for (const sec of secs) if (sec.getBoundingClientRect().top < innerHeight * 0.55) active = sec
+  const box = (active || secs[0] || document.body).getBoundingClientRect()
+  const leftSpace = box.left, rightSpace = innerWidth - box.right
+  const useRight = rightSpace >= leftSpace
+  const space = Math.max(leftSpace, rightSpace)
+  dock.show = space > 300
+  const cx = useRight ? box.right + rightSpace / 2 : leftSpace / 2
+  const ndc = new THREE.Vector2((cx / innerWidth) * 2 - 1, 0.12)
   const ray = new THREE.Raycaster(); ray.setFromCamera(ndc, camera)
   const dir = new THREE.Vector3(); camera.getWorldDirection(dir)
   const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(dir.negate(), new THREE.Vector3())
-  ray.ray.intersectPlane(plane, dock.pos)
-  dock.scale = THREE.MathUtils.clamp(space / 900, 0.26, 0.42)
+  ray.ray.intersectPlane(plane, dock.target)
+  if (!dock.ready) { dock.pos.copy(dock.target); dock.ready = true }
+  dock.scale = THREE.MathUtils.clamp(space / 1050, 0.24, 0.42)
 }
 // time-based smoothing, so it behaves the same at 30, 60 or 120 frames per second
 function updateFollow(t) {
@@ -337,6 +343,9 @@ function updateFollow(t) {
   const v = dt > 0 ? (scrollY - follow.lastY) / (dt * 60) : 0; follow.lastY = scrollY // pixels per 60th of a second
   follow.vel += (v - follow.vel) * k(9)
   follow.lag += (THREE.MathUtils.clamp(-v * 0.004, -0.5, 0.5) - follow.lag) * k(6)
+  updateDock()
+  dock.pos.lerp(dock.target, k(2.2))                       // fly across smoothly when the empty side changes
+  dock.showAmt += ((dock.show ? 1 : 0) - dock.showAmt) * k(5)
 }
 const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2)
 const easeOutCubic = (t) => 1 - (1 - t) ** 3
@@ -455,10 +464,9 @@ function renderAt(t) {
     drone.rotation.z = lerp(drone.rotation.z, 0.06 * Math.sin(t * 1.1), sd)
     drone.rotation.x = lerp(drone.rotation.x, -0.05 + THREE.MathUtils.clamp(follow.vel * 0.004, -0.35, 0.35), sd)
   }
-  drone.scale.setScalar(0.9 * lerp(1, dock.show ? dock.scale : 0.001, sd))
+  drone.scale.setScalar(0.9 * lerp(1, dock.scale * dock.showAmt + 0.0001, sd))
+  drone.visible = sd < 0.98 || dock.showAmt > 0.02
   floor.material.opacity = 0.35 * (1 - sd)
-  // no room beside the text (phones): fade the whole drone out below the hero instead of covering words
-  renderer.domElement.style.opacity = dock.show ? '' : String(Math.max(0, 1 - sd * 1.6))
   if (after > 0.25 && !readyShown) {
     readyShown = true
     document.body.classList.add('ready')

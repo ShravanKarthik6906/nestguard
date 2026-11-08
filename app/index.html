@@ -29,14 +29,14 @@
     </header>
 
     <main class="info">
-      <section id="problem">
+      <section id="problem" class="place-left dir-r">
         <span class="label">The problem</span>
         <h2>The biggest risks are invisible from the ground.</h2>
         <p>A pilot standing in a field sees blue sky. They cannot see the gusts at 120 feet, the cloud base dropping below the FAA limit, the red-tailed hawk that defends this tree line, the migrating flock passing overhead, or the power line hidden against the trees. Each of those can bring a drone down, and a falling drone can hurt people and wildlife.</p>
         <p class="story"><span class="big">1,500</span> eggs were abandoned at Bolsa Chica, California, on May 13, 2021, after a drone crashed into a nesting colony of terns and the birds left their nests. A single check before that flight would have said Don't fly. <a class="link" href="/preflight.html?scenario=bolsa">Replay that check</a></p>
       </section>
 
-      <section id="how">
+      <section id="how" class="place-right dir-l">
         <span class="label">How it works</span>
         <h2>Ten hazards, checked together, one answer.</h2>
         <p class="step"><span class="num">01</span> <b>Pick a spot and a time.</b> Tap the map, use your location, or let the controller device send its GPS position.</p>
@@ -50,7 +50,7 @@
           <b>Air quality.</b> Smoke and haze that cut visibility.</p>
       </section>
 
-      <section id="live">
+      <section id="live" class="place-center dir-u">
         <span class="label">Live right now</span>
         <h2>Right now at RPI, Troy: <span id="live-verdict" class="word">checking</span></h2>
         <p id="live-message" class="live-message"></p>
@@ -59,19 +59,19 @@
         <p><a class="btn solid" href="/preflight.html">Open the pre-flight check</a></p>
       </section>
 
-      <section id="device">
+      <section id="device" class="place-left place-indent dir-d">
         <span class="label">The device</span>
         <h2>A small box clipped to the controller.</h2>
         <p>It reads the same answer every five seconds, lights up green, yellow or red, and flashes its screen when the pilot gets close to a risky zone. It also reports temperature and light, so the app can show that it is online. For indoor demos the app walks a pretend path and the device follows it.</p>
       </section>
 
-      <section id="privacy">
+      <section id="privacy" class="place-right dir-ur">
         <span class="label">Privacy</span>
         <h2>We never show where birds nest.</h2>
         <p>Exact nest and sighting locations stay on our server. The map only shows zones blurred to a grid of about 1 km, so nobody can use NestGuard to find nests. We keep no accounts and never store your exact position. <a class="link" href="/privacy.html">Read the privacy page</a></p>
       </section>
 
-      <section id="built">
+      <section id="built" class="place-center place-wide dir-ul">
         <span class="label">Built with</span>
         <p class="flow"><b>MongoDB Atlas</b> holds the blurred bird zones and answers the "near me" search.
           <b>Tiger Data</b> keeps sighting trends, device history and the check counts.
@@ -81,7 +81,7 @@
           The data comes from <b>eBird</b>, <b>iNaturalist</b>, <b>Open-Meteo</b> and <b>OpenStreetMap</b>.</p>
       </section>
 
-      <section id="team">
+      <section id="team" class="place-right dir-l">
         <span class="label">Team</span>
         <p class="flow"><b>Udaya</b> built the back end, the data and the risk score.
           <b>Ryan</b> built the controller device.
