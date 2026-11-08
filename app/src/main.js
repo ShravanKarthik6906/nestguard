@@ -174,6 +174,10 @@ async function stopWalk() {
 }
 $('demo-stop').addEventListener('click', stopWalk)
 
+// Deep link from the landing page or the demo script: /preflight.html?scenario=bolsa (rpi-today, rpi-may, bolsa, power)
+const scenario = new URLSearchParams(location.search).get('scenario')
+if (scenario && PRESETS[scenario]) document.querySelector(`[data-preset="${scenario}"]`).click()
+
 loadZones()
 loadPowerlines()
 startTelemetry()

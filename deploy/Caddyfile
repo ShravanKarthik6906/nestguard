@@ -13,7 +13,7 @@ SITE_NAMES {
 	# Everything else -> the built app
 	handle {
 		root * /srv/nestguard/app/dist
-		try_files {path} /index.html
+		try_files {path} {path}.html /index.html
 		file_server
 	}
 }
