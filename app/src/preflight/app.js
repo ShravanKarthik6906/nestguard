@@ -7,7 +7,7 @@ import '@fontsource/b612-mono/700.css'
 import './pf.css'
 import { RPI, USE_MOCK } from '../config.js'
 import { getZones, check, explain, getPowerlines, distM } from '../api.js'
-import { createMap, drawZones, setPin, setPinRisk, drawPowerlines, showPowerlines, onFeatureClick, drawRoute, clearRoute, getMap, setSaferSpot } from '../map.js'
+import { createMap, drawZones, setPin, setPinRisk, drawPowerlines, showPowerlines, onFeatureClick, drawRoute, clearRoute, getMap, setSaferSpot, frameSpot } from '../map.js'
 import { band, mainDriver } from '../risk.js'
 import { startDemo, stopDemo, pauseDemo, resumeDemo, stepDemo, isRunning, demoDate, PATH_POINTS } from '../demo.js'
 import { announce } from '../speech.js'
@@ -48,7 +48,7 @@ function go(view, { push = true } = {}) {
   setTimeout(() => {
     map.invalidateSize()
     if (state.demo) map.fitBounds(PATH_POINTS().map((p) => [p.lat, p.lon]), { padding: [50, 50] })
-    else if (state.spot && !state.pick && (view === 'explore' || view === 'results')) map.setView([state.spot.lat, state.spot.lon], Math.max(map.getZoom(), 14))
+    else if (state.spot && !state.pick && (view === 'explore' || view === 'results')) frameSpot(state.spot.lat, state.spot.lon)
   }, 80)
   document.body.classList.toggle('explore-mode', view === 'explore')
   document.body.classList.toggle('results-mode', view === 'results')
@@ -261,9 +261,15 @@ function renderSafer(r, hz) {
   const placed = sp && Number.isFinite(sp.lat) && Number.isFinite(sp.lon)
   setSaferSpot(placed ? sp : null, () => goToSafer(sp))
   if (sp) {
-    $('r-safer').innerHTML = `<p class="safer-t"><b>Lower-risk spot nearby</b> <span class="mono">${esc(sp.label || `${sp.distance_km} km ${sp.direction}: risk ${sp.score}`)}</span>${sp.note ? `<span class="safer-n">${esc(sp.note)}</span>` : ''}</p>` +
-      (placed ? '<button class="btn" type="button" id="safer-go">Check this spot</button>' : '')
-    if (placed) $('safer-go').addEventListener('click', () => goToSafer(sp))
+    $('r-safer').innerHTML = `<div class="safer-card"><span class="safer-k">Lower-risk spot nearby</span>` +
+      `<p class="safer-main"><span class="safer-num mono">${esc(sp.score)}</span><span class="of mono">/100</span>` +
+      `<span class="safer-where">${esc(sp.distance_km != null ? `${sp.distance_km} km ${sp.direction}` : (sp.label || ''))}</span></p>` +
+      (sp.note ? `<p class="safer-n">${esc(sp.note)}</p>` : '') +
+      (placed ? '<button class="btn primary" type="button" id="safer-go">Check this spot</button><span class="safer-hint">Also marked on the map</span>' : '') + '</div>'
+    if (placed) {
+      $('safer-go').addEventListener('click', () => goToSafer(sp))
+      if (state.view !== 'setup' && state.spot) frameSpot(state.spot.lat, state.spot.lon)
+    }
     return
   }
   const head = '<p class="safer-t"><b>Lower-risk spot nearby</b> '
@@ -401,6 +407,13 @@ function renderSpotSummary() {
   if (!state.spot) return
   const bd = band(r && r.score)
   $('exp-spot').innerHTML = r ? `Your spot: <b>${esc(state.spot.name || 'selected spot')}</b>, risk <b class="mono">${Math.round(r.score)}/100</b> (${esc(bd.word.toLowerCase())})` : ''
+  const sp = r && r.safer_spot
+  const box = $('exp-safer')
+  box.hidden = !(sp && Number.isFinite(sp.lat))
+  if (box.hidden) return
+  box.innerHTML = `<span class="safer-k">Lower-risk spot nearby</span><p class="safer-main"><span class="safer-num mono">${esc(sp.score)}</span><span class="of mono">/100</span>` +
+    `<span class="safer-where">${esc(sp.distance_km)} km ${esc(sp.direction)}</span></p><button class="btn primary" type="button">Check this spot</button>`
+  box.querySelector('button').addEventListener('click', () => goToSafer(sp))
 }
 
 // tapping the map: choose a spot (pick mode) or check that spot
